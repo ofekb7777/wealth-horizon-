@@ -154,36 +154,8 @@ export default function App() {
 
   const activeSheet = sheets.find(s => s.id === state.activeSheetId);
 
-  // Simulate small real-time fluctuations for UI "liveliness"
-  useEffect(() => {
-    const simulatePriceMovement = () => {
-      setState(prev => {
-        let changed = false;
-        const updatedInvestments = prev.investments.map(inv => {
-          if (inv.currentPrice === 0) return inv;
-          // Tiny random variation +/- 0.1% for visual movement
-          const change = 1 + (Math.random() * 0.002 - 0.001);
-          const newPrice = Number((inv.currentPrice * change).toFixed(2));
-          
-          if (newPrice !== inv.currentPrice) {
-            changed = true;
-            return { ...inv, currentPrice: newPrice };
-          }
-          return inv;
-        });
-
-        if (changed) {
-          return { ...prev, investments: updatedInvestments };
-        }
-        return prev;
-      });
-    };
-
-    const interval = setInterval(simulatePriceMovement, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Background fetch for REAL market data
+  // משיכת מחירים אמיתיים ברקע. אין כאן שום סימולציה: מה שמוצג הוא
+  // המחיר האחרון שנמשך בפועל, ובלי רשת — האחרון שנשמר.
   useEffect(() => {
     const updateRealPrices = async () => {
       const tickers = state.investments
