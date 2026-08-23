@@ -24,13 +24,13 @@
 | React 19 + Vite 6 + TypeScript + Tailwind 4 | ✅ נשאר |
 | Recharts · lucide-react · motion | ✅ נשאר |
 | `xlsx` | ✅ נשאר — **כבר בשימוש** ב-`Spreadsheet.tsx:3` לייבוא תנועות |
-| Firebase / Firestore | ❌ יוצא בשלב 2 → SQLite מקומי |
-| `react-firebase-hooks` | ❌ **תלות מתה** — ב-package.json, לא מיובאת באף קובץ |
-| `@google/genai` | ❌ **תלות מתה** — לא מיובאת באף קובץ (ראה §6) |
-| `server.ts` (Express) | ❌ יוצא בשלב 2 — אבל מריץ 5 endpoints, לא רק הגשה סטטית |
-| `yahoo-finance2` | ⚠️ יעבור לקריאה ישירה מהמכשיר דרך Capacitor HTTP |
+| `@capacitor-community/sqlite` | ✅ נכנס בשלב 2 — המסד המקומי |
+| `jeep-sqlite` + `sql.js` | ✅ נכנס בשלב 2 — SQLite בדפדפן (פיתוח בלבד) |
+| Firebase / Firestore | ✅ **הוסר בשלב 2** |
+| `react-firebase-hooks` · `@google/genai` | ✅ **הוסרו בשלב 2** (היו תלויות מתות) |
+| `server.ts` (Express) + `yahoo-finance2` | ✅ **הוסרו בשלב 2** — הכל עובר דרך `services/marketData.ts` |
 | `vite-plugin-pwa` | ❌ יוצא בשלב 3 |
-| Capacitor | ➕ נכנס בשלב 3 |
+| Capacitor | ➕ `@capacitor/core` כבר בפנים; פלטפורמת android בשלב 3 |
 | Jetpack Glance (Kotlin) | ➕ נכנס בשלב 4 — הווידג'ט |
 
 ---
@@ -64,34 +64,31 @@ src/
 │   ├── RemindersWidget.tsx  תזכורות שנשלחות במייל
 │   ├── SpecialBackgroundEffect.tsx   אפקטי רקע
 │   └── InstallModal.tsx     הנחיות התקנת PWA
-├── data/                    ⭐ שכבת הנתונים (שלב 1)
+├── data/                    ⭐ שכבת הנתונים
 │   ├── types.ts             טיפוסי הישויות — מקור האמת
 │   ├── Repository.ts        ה-interface: החוזה שכל מימוש חייב לספק
-│   ├── FirebaseRepository.ts  המימוש הנוכחי — הקובץ היחיד עם firebase/firestore
-│   ├── cloud.ts             פיצ'רים שהם ענן במהותם (הודעות, משוב, אדמין)
-│   └── index.ts             נקודת החיבור — כאן משנים שורה אחת בשלב 2
+│   ├── SqliteRepository.ts  המימוש היחיד — SQLite מקומי
+│   ├── schema.sql           סכימת גרסה 1
+│   ├── migrations.ts        גרסאות סכימה לפי PRAGMA user_version
+│   └── index.ts             נקודת החיבור + initDatabase()
 ├── context/
-│   ├── AuthContext.tsx      Google auth + בדיקת אדמין (רשימת מיילים בקוד)
-│   ├── ThemeContext.tsx     ערכת נושא — עובר דרך ה-Repository
+│   ├── ThemeContext.tsx     ערכת נושא — localStorage (נטען סינכרונית)
 │   └── VersionContext.tsx   גרסת אפליקציה
-├── services/
-│   ├── geminiService.ts     תובנות AI דרך פרוקסי /api/gemini
-│   └── gmailService.ts      שליחת מייל לתזכורות
-└── lib/
-    ├── firebase.ts          אתחול Firebase + Google provider
-    └── firestore-utils.ts   טיפול בשגיאות + sanitize
+└── services/
+    ├── marketData.ts        מחירים/חיפוש/אנליטיקה — ישירות מ-Yahoo, עם מטמון
+    └── geminiService.ts     תובנות AI עם מפתח אישי מההגדרות
 ```
 
 **7 מסכים** (`INITIAL_SHEETS`, App.tsx:26-34): Home · Accounts · Analytics · Income · Expenses · Budgets · Investments
 
-**זרימת נתונים כיום (אחרי שלב 1):**
-`App.tsx` → `data/index.ts` → `Repository` (interface) → `FirebaseRepository` → Firestore.
+**זרימת נתונים (אחרי שלב 2):**
+`App.tsx` → `data/index.ts` → `Repository` (interface) → `SqliteRepository` → SQLite על המכשיר.
 בנוסף `App.tsx` שומר עותק גיבוי של כל ה-state ב-`localStorage`.
 
-**אחרי שלב 2:** אותה שרשרת בדיוק, רק ש-`data/index.ts` יחזיר `SqliteRepository`.
-**אף קומפוננטה לא מייבאת `firebase`.** רק 4 קבצים עושים זאת:
-`lib/firebase.ts` (אתחול), `context/AuthContext.tsx` (auth בלבד),
-`data/FirebaseRepository.ts` ו-`data/cloud.ts`.
+**אין התחברות ואין משתמשים.** האפליקציה נפתחת ישר לנתונים.
+במקום שער ההתחברות יש שער פתיחת מסד: מסך טעינה עד שהמסד נפתח, ומסך שגיאה אם נכשל.
+
+**רשת:** רק למחירי מניות ולתובנות AI. שתיהן נכשלות בשקט ולא חוסמות כלום.
 
 ---
 
@@ -139,19 +136,21 @@ src/
 
 ## 6. מלכודות ידועות — נמצאו בשלב 0
 
-### 🔴 1. תזכורות ומשוב לא נשמרים בכלל
+### ✅ 1. תזכורות ומשוב לא נשמרים — נפתר בשלב 2
 `firestore.rules` **אין בו כלל** ל-`users/{uid}/reminders` ולא ל-`feedback`, ואילו
 `firestoreService.ts:204-222, 370-393` כותב לשניהם. הכלל הראשון בקובץ
 (`match /{document=**} { allow read, write: if false }`) חוסם אותם.
 `handleFirestoreError` (`lib/firestore-utils.ts:48`) מדפיס ל-console **וזורק מחדש**.
 מכיוון שהקריאות ב-`App.tsx` לא מחכות ב-`await` ואין להן `.catch`, התוצאה היא
 unhandled promise rejection: המשתמש לא רואה כלום, התזכורת נראית שנשמרה, ונעלמת ברענון.
-**לא מתקנים** — נעלם מעצמו בשלב 2 עם המעבר ל-SQLite.
+**נפתר:** אין יותר Firestore ואין כללי הרשאה. תזכורות נשמרות בטבלה מקומית.
+בדרך התגלה באג שני: `Settings` רינדר את ווידג'ט התזכורות עם `onAddReminder!`
+בעוד ש-`App.tsx` לא העביר את ההנדלר — כלומר הוספת תזכורת זרקה שגיאה. תוקן.
 
 > תוקן ב-2026-08-23: בשלב 0 כתבתי כאן ש-`handleFirestoreError` "רק מדפיס ל-console".
-> זה לא נכון — הוא זורק. האפקט שהמשתמש חווה זהה, המנגנון שונה.
+> זה לא נכון — הוא זרק. האפקט שהמשתמש חווה היה זהה, המנגנון שונה.
 
-### 🟡 2. כתיבות בתוך `setState` — טופל חלקית בשלב 1
+### 🟡 2. כתיבות בתוך `setState` — טופל חלקית
 **היה:** ~45 קריאות ל-Firestore מפוזרות ב-`App.tsx`, רובן בתוך פונקציות עדכון של
 `setState` — פונקציות שחייבות להיות טהורות. ב-React 19 StrictMode הן רצות פעמיים → כתיבה כפולה.
 
@@ -159,54 +158,50 @@ unhandled promise rejection: המשתמש לא רואה כלום, התזכורת
 כפולה כבר לא מזיקה. 15 כתיבות עדיין יושבות בתוך updaters, כולן בהנדלרים שמחשבים
 מצב נגזר מ-`prev` (יתרות חשבון, עריכת שדה). ההערה ב-`App.tsx` מסבירה למה.
 
-**מה שנשאר:** כל עריכת תנועה עדיין כותבת מחדש את *כל* החשבונות. נפתר בשלב 2,
-שם עדכון יתרה הוא `UPDATE` ממוקד ולא כתיבה מחדש של אוסף.
+**מה שנשאר:** כל עריכת תנועה עדיין כותבת מחדש את *כל* החשבונות
+(`nextAccounts.forEach`). ב-SQLite זה upsert מקומי ולא קריאת רשת, ולכן זה
+כבר לא כואב — אבל זה עדיין בזבזני. שווה ניקוי בשלב עתידי.
 
 ### 🟠 3. האפליקציה כולה באנגלית, LTR
 אפס תווים עבריים ב-`src/`. `index.html` הוא `<html lang="en">` בלי `dir` בכלל.
 תרגום 14 קומפוננטות + RTL אמיתי = היקף של שלב מלא.
 **החלטה: שלב 3.5 נפרד**, אחרי שה-APK עובד ולפני העיצוב.
 
-### 🟠 4. שלושה service workers מתנגשים
+### 🟠 4. שלושה service workers מתנגשים — שלב 3
 `public/sw.js` הוא מעטפת ריקה שלא מטמיעה כלום. הוא נרשם **פעמיים**
 (`main.tsx:21` ו-`App.tsx:744`), ובמקביל `vite-plugin-pwa` רושם שלישי עם `autoUpdate`.
 אייקוני ה-manifest מגיעים מ-CDN חיצוני (flaticon ב-`vite.config.ts:25-38`,
 icons8 ב-`public/manifest.json`) — בלי רשת אין אייקון. הכל יוצא בשלב 3.
 
-### 🟡 5. נתונים מזויפים מוצגים כאמיתיים
-- `App.tsx:212-238` — טיימר שכל 3 שניות משנה כל מחיר מניה ב-±0.1% אקראי "ל-liveliness",
-  והתוצאה נכנסת ל-state ומשם ל-localStorage.
-- `server.ts:265-271` — `cpuUsagePercent` הוא `Math.random()` טהור.
-- `server.ts:211-223` — דירוג "Strong Buy / Sell" מארבעה ממוצעים נעים, מוצג כהמלצת השקעה.
+### 🟡 5. נתונים מזויפים — שניים מתוך שלושה נפתרו
+- ✅ סימולציית המחירים האקראית הוסרה. מה שמוצג הוא מחיר אמיתי שנמשך,
+  או האחרון שנשמר במטמון.
+- ✅ `cpuUsagePercent` המזויף נמחק יחד עם `server.ts` ו-`AdminConsole`.
+- ⚠️ **נשאר:** דירוג "Strong Buy / Sell" (`services/marketData.ts`). החישוב אמיתי —
+  ארבע השוואות לממוצעים נעים — אבל התווית מציגה אותו כהמלצת השקעה. שווה לשנות
+  את הניסוח בשלב העיצוב.
 
-### מפתחות API
-- 🟡 `firebase-applet-config.json` — apiKey אמיתי בגיט. תקין ל-Firebase web (ההגנה היא ה-rules).
-  הקובץ נמחק בשלב 2.
-- 🟢 **מפתח Gemini לא חשוף.** `@google/genai` לא מיובא באף קובץ.
-  `geminiService.ts:26` קורא ל-`/api/gemini` שרץ בשרת, והמפתח נקרא מ-`process.env` שם.
-  `vite.config.ts:51` מגדיר `define` שהיה מטמיע אותו בבאנדל — אבל אף קוד לקוח לא מפנה אליו.
-  **החלטה נדרשת בשלב 2** כשמוחקים את `server.ts`: המלצה — הזנת מפתח אישי בהגדרות,
-  נשמר על המכשיר, נכשל בשקט כשאין מפתח או רשת.
-- 🟡 טוקן Gmail (`lib/firebase.ts:26,39`) יושב בזיכרון בלבד — נעלם ברענון,
-  והתזכורות מפסיקות לעבוד עד התחברות מחדש.
+### מפתחות API — נסגר בשלב 2
+- ✅ `firebase-applet-config.json` נמחק יחד עם Firebase.
+- ✅ מפתח Gemini: נבחרה **אפשרות ב׳** מהבריף. מזינים מפתח אישי במסך ההגדרות,
+  הוא נשמר ב-localStorage על המכשיר בלבד, ונשלח רק ל-Google. בלי מפתח הפיצ'ר
+  כבוי ולא חוסם כלום. ה-`define` ב-`vite.config.ts` שהיה מטמיע מפתח בבאנדל הוסר.
+- ✅ טוקן Gmail נמחק. שליחת תזכורות במייל ירדה יחד עם ההתחברות ל-Google —
+  התזכורות נשמרות ומוצגות באפליקציה, והתראה אמיתית תיכנס בשלב 4.
 
 ---
 
-## 7. `server.ts` — מה הוא באמת עושה
+## 7. רשת — מה עדיין יוצא החוצה
 
-לא "רק שרת סטטי". מחיקתו שוברת 4 פיצ'רים:
+`server.ts` נמחק בשלב 2. שתי קריאות רשת נשארו, שתיהן אופציונליות:
 
-| Endpoint | מה עושה | מי קורא |
+| מה | לאן | כשאין רשת |
 |---|---|---|
-| `GET /api/prices` | מחירי מניות מ-Yahoo | `App.tsx:252` (כל 15ש'), `App.tsx:517`, `Investments.tsx:384` |
-| `GET /api/search` | חיפוש טיקרים + היסטוריה שנתית | `Investments.tsx:105` |
-| `GET /api/analytics` | ביצועים 1M/3M/6M/1Y + ממוצעים נעים + דירוג | `Investments.tsx:73` |
-| `POST /api/gemini` | פרוקסי ל-Gemini | `geminiService.ts:26` |
-| `GET /api/system-metrics` | CPU/זיכרון (CPU מזויף) | `AdminConsole.tsx:86` |
+| מחירים · חיפוש טיקרים · אנליטיקה | Yahoo, ישירות מהמכשיר (`CapacitorHttp`) | מחזיר מחיר מוטמן אחרון; חיפוש מחזיר ריק |
+| תובנות AI | Google Gemini, עם מפתח אישי מההגדרות | הפיצ'ר כבוי בשקט |
 
-בנוסף מגיש את הפרונטאנד: Vite middleware בפיתוח, `dist` סטטי בפרודקשן.
-
----
+**חוק:** אף אחת מהן לא זורקת, לא מחזירה 0, ולא חוסמת שום מסך.
+בדפדפן Yahoo חוסם CORS ולכן המחירים לא יתעדכנו בפיתוח — באנדרואיד זה עובד.
 
 ## 8. פקודות
 
