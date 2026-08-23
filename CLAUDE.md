@@ -29,8 +29,9 @@
 | Firebase / Firestore | ✅ **הוסר בשלב 2** |
 | `react-firebase-hooks` · `@google/genai` | ✅ **הוסרו בשלב 2** (היו תלויות מתות) |
 | `server.ts` (Express) + `yahoo-finance2` | ✅ **הוסרו בשלב 2** — הכל עובר דרך `services/marketData.ts` |
-| `vite-plugin-pwa` | ❌ יוצא בשלב 3 |
-| Capacitor | ➕ `@capacitor/core` כבר בפנים; פלטפורמת android בשלב 3 |
+| `vite-plugin-pwa` | ✅ **הוסר בשלב 3** |
+| Capacitor + פלטפורמת android | ✅ נכנס בשלב 3 — `com.ofekb.wealthhorizon` |
+| `@fontsource/*` | ✅ נכנס בשלב 3 — פונטים ארוזים, לא מ-CDN |
 | Jetpack Glance (Kotlin) | ➕ נכנס בשלב 4 — הווידג'ט |
 
 ---
@@ -74,6 +75,8 @@ src/
 ├── context/
 │   ├── ThemeContext.tsx     ערכת נושא — localStorage (נטען סינכרונית)
 │   └── VersionContext.tsx   גרסת אפליקציה
+├── native/
+│   └── index.ts             עטיפת Capacitor — סרגל סטטוס, splash, כפתור "חזור"
 └── services/
     ├── marketData.ts        מחירים/חיפוש/אנליטיקה — ישירות מ-Yahoo, עם מטמון
     └── geminiService.ts     תובנות AI עם מפתח אישי מההגדרות
@@ -167,11 +170,12 @@ unhandled promise rejection: המשתמש לא רואה כלום, התזכורת
 תרגום 14 קומפוננטות + RTL אמיתי = היקף של שלב מלא.
 **החלטה: שלב 3.5 נפרד**, אחרי שה-APK עובד ולפני העיצוב.
 
-### 🟠 4. שלושה service workers מתנגשים — שלב 3
-`public/sw.js` הוא מעטפת ריקה שלא מטמיעה כלום. הוא נרשם **פעמיים**
-(`main.tsx:21` ו-`App.tsx:744`), ובמקביל `vite-plugin-pwa` רושם שלישי עם `autoUpdate`.
-אייקוני ה-manifest מגיעים מ-CDN חיצוני (flaticon ב-`vite.config.ts:25-38`,
-icons8 ב-`public/manifest.json`) — בלי רשת אין אייקון. הכל יוצא בשלב 3.
+### ✅ 4. שלושה service workers מתנגשים — נפתר בשלב 3
+כל ה-PWA ירד: `sw.js`, `manifest.json`, `vite-plugin-pwa` ומודל ההתקנה.
+`main.tsx` גם מבטל רישום של service worker ישן ומנקה מטמון, עבור מכשירים
+שכבר פתחו את הגרסה הקודמת.
+בדרך התגלה שגם **הפונטים** נמשכו מ-CDN חיצוני — אותה בעיה בדיוק. הם נארזים
+עכשיו דרך `@fontsource`. **הבילד לא מבצע אף בקשת רשת חיצונית.**
 
 ### 🟡 5. נתונים מזויפים — שניים מתוך שלושה נפתרו
 - ✅ סימולציית המחירים האקראית הוסרה. מה שמוצג הוא מחיר אמיתי שנמשך,
@@ -206,11 +210,18 @@ icons8 ב-`public/manifest.json`) — בלי רשת אין אייקון. הכל 
 ## 8. פקודות
 
 ```bash
-npm install       # התקנת תלויות
-npm run dev       # שרת פיתוח (tsx server.ts) — פורט 3000
+npm install       # התקנת תלויות (postinstall מעתיק את sql-wasm.wasm)
+npm run dev       # שרת פיתוח vite
 npm run lint      # tsc --noEmit — בדיקת טיפוסים
 npm run build     # vite build → dist/
 npm run preview   # תצוגה מקדימה של הבילד
+```
+
+**אנדרואיד** — הוראות מלאות ב-`README-ANDROID.md`:
+
+```bash
+npm run build && npx cap sync   # ⚠️ שכחת sync = הטלפון מציג גרסה ישנה
+npx cap open android            # פותח את Android Studio
 ```
 
 **חובה בסוף כל שלב:** `npm run lint && npm run build` — שניהם נקיים.
