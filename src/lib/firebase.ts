@@ -7,6 +7,9 @@ import firebaseConfig from '../../firebase-applet-config.json';
 const config = firebaseConfig as any;
 const isValidConfig = config && config.apiKey && config.apiKey !== "";
 
+/** האם Firebase מוגדר בכלל. נחשף כדי ש-Login לא יצטרך לייבא את קובץ הקונפיג. */
+export const isAuthConfigured = !!isValidConfig;
+
 const app = isValidConfig ? initializeApp(config) : null as any;
 export const auth = isValidConfig ? getAuth(app) : null as any;
 

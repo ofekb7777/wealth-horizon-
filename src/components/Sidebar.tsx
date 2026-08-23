@@ -2,7 +2,7 @@ import React from 'react';
 import { Sheet } from '../types';
 import { LayoutGrid, TrendingDown, TrendingUp, Wallet, LineChart, Home as HomeIcon, LogOut, User as UserIcon, Shield, PieChart, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User } from 'firebase/auth';
+import { AppUser } from '../data';
 import AdminConsole from './AdminConsole';
 import { useTheme } from '../context/ThemeContext';
 
@@ -10,7 +10,7 @@ interface SidebarProps {
   sheets: Sheet[];
   activeSheetId: string;
   onSelectSheet: (id: string) => void;
-  user: User | null;
+  user: AppUser | null;
   onLogout: () => void;
   currency: any; // Added for admin console
   isAdmin?: boolean;

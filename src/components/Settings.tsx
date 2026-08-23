@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Theme, BgEffect, MonoStyle } from '../context/ThemeContext';
 import { Currency, CURRENCIES, SpreadsheetState } from '../types';
-import { User } from 'firebase/auth';
+import { AppUser } from '../data';
 import { 
   Palette, 
   Sparkles, 
@@ -32,7 +32,7 @@ interface SettingsProps {
   onSetMonoStyle: (style: MonoStyle) => void;
   currency: Currency;
   onSetCurrency: (currency: Currency) => void;
-  user: User | null;
+  user: AppUser | null;
   isAdmin: boolean;
   state: SpreadsheetState;
   onImportState: (state: SpreadsheetState) => void;

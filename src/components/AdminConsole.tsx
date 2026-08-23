@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { firestoreService } from '../services/firestoreService';
-import { auth } from '../lib/firebase';
+import { cloudService } from '../data/cloud';
 import { Users, Shield, Activity, Database, Terminal, Server, Cpu, HardDrive, Wifi, MemoryStick as Memory, Globe, Layers, Power, Lock, RefreshCw, Folder, MessageSquare, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Currency, CURRENCIES } from '../types';
@@ -51,7 +50,7 @@ export default function AdminConsole({ currency, globalUpdate }: AdminConsolePro
   const handleSendGlobalAlert = async () => {
     if (!globalAlertText.trim()) return;
     try {
-      await firestoreService.saveGlobalAlert(globalAlertText.trim());
+      await cloudService.saveGlobalAlert(globalAlertText.trim());
       addLog("Global alert broadcast transmitted to all nodes.", "warn");
       setShowGlobalAlertModal(false);
       setGlobalAlertText('');
@@ -67,7 +66,7 @@ export default function AdminConsole({ currency, globalUpdate }: AdminConsolePro
     const loadUsers = async () => {
       setLoading(true);
       try {
-        const data = await firestoreService.fetchAllUsersData();
+        const data = await cloudService.fetchAllUsersData();
         setUsers(data);
       } catch (error) {
         console.error("Failed to load admin data", error);
@@ -77,7 +76,7 @@ export default function AdminConsole({ currency, globalUpdate }: AdminConsolePro
     };
     loadUsers();
 
-    const unsubscribeFeedback = firestoreService.subscribeToFeedback((fbData) => {
+    const unsubscribeFeedback = cloudService.subscribeToFeedback((fbData) => {
       setFeedback(fbData);
     });
 
@@ -304,7 +303,7 @@ export default function AdminConsole({ currency, globalUpdate }: AdminConsolePro
               <button
                 onClick={async () => {
                   try {
-                    await firestoreService.saveGlobalSystemUpdate(systemUpdateText, globalUpdate.version);
+                    await cloudService.saveGlobalSystemUpdate(systemUpdateText, globalUpdate.version);
                     addLog('System update text updated', 'success');
                   } catch (e) {
                     addLog('Failed to update system message', 'warn');

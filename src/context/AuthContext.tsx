@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, signInWithGoogle, logout, getAccessToken, setCachedAccessToken } from '../lib/firebase';
-import { firestoreService } from '../services/firestoreService';
+import { repository, AppUser } from '../data';
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   loading: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -14,8 +14,20 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * ממיר את אובייקט המשתמש של Firebase לטיפוס `AppUser` שלנו,
+ * כדי שאף קומפוננטה לא תצטרך לייבא טיפוסים מ-`firebase/auth`.
+ */
+const toAppUser = (user: FirebaseUser): AppUser => ({
+  uid: user.uid,
+  email: user.email,
+  displayName: user.displayName,
+  photoURL: user.photoURL,
+  emailVerified: user.emailVerified,
+});
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -25,11 +37,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
       return;
     }
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const appUser = firebaseUser ? toAppUser(firebaseUser) : null;
+      setUser(appUser);
+
       const currentToken = getAccessToken();
-      if (!user) {
+      if (!appUser) {
         setCachedAccessToken(null);
         setAccessToken(null);
       } else if (currentToken) {
@@ -42,10 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Hardcoded admin email list for role check
-      const adminEmails = ["ofekb7777@gmail.com"]; 
-      setIsAdmin(!!user && adminEmails.includes(user.email || ""));
-      if (user) {
-        await firestoreService.syncUser(user);
+      const adminEmails = ["ofekb7777@gmail.com"];
+      setIsAdmin(!!appUser && adminEmails.includes(appUser.email || ""));
+      if (appUser) {
+        await repository.syncUser(appUser);
       }
       setLoading(false);
     });

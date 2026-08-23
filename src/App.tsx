@@ -13,7 +13,8 @@ import Login from './components/Login.tsx';
 import { useAuth } from './context/AuthContext.tsx';
 import { useTheme, ThemeProvider } from './context/ThemeContext.tsx';
 import { VersionProvider } from './context/VersionContext.tsx';
-import { firestoreService } from './services/firestoreService.ts';
+import { repository } from './data';
+import { cloudService } from './data/cloud.ts';
 import { sendGmail } from './services/gmailService.ts';
 import { Globe, Loader2, LogOut, MessageSquare, X, Send, Check, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -103,7 +104,7 @@ export default function App() {
     if (!feedbackText.trim() || !user) return;
     setIsSubmittingFeedback(true);
     try {
-      await firestoreService.submitFeedback(user.uid, user.email || 'unknown', feedbackText);
+      await cloudService.submitFeedback(user.uid, user.email || 'unknown', feedbackText);
       setFeedbackText('');
       setFeedbackSuccess(true);
       setTimeout(() => {
@@ -131,18 +132,20 @@ export default function App() {
       const loadData = async () => {
         setDataLoading(true);
         try {
-          const remoteData = await firestoreService.fetchUserData(user.uid);
+          const remoteData = await repository.fetchUserData();
 
           if (remoteData) {
             setState(prev => ({
               ...prev,
-              ...remoteData,
+              activeSheetId: remoteData.profile.activeSheetId || prev.activeSheetId,
+              notes: remoteData.profile.notes ?? prev.notes,
+              reminders: remoteData.reminders,
               transactions: remoteData.transactions.length > 0 ? remoteData.transactions : prev.transactions,
               accounts: remoteData.accounts.length > 0 ? remoteData.accounts : prev.accounts,
               investments: remoteData.investments.length > 0 ? remoteData.investments : prev.investments,
               goals: remoteData.goals.length > 0 ? remoteData.goals : prev.goals,
-              budgets: remoteData.budgets && remoteData.budgets.length > 0 ? remoteData.budgets : prev.budgets,
-              patchNotes: remoteData.patchNotes || prev.patchNotes
+              budgets: remoteData.budgets.length > 0 ? remoteData.budgets : prev.budgets,
+              patchNotes: remoteData.profile.patchNotes || prev.patchNotes
             }));
           }
         } catch (e) {
@@ -154,7 +157,7 @@ export default function App() {
       loadData();
 
       // Real-time listener for global system updates
-      const unsubscribeGlobal = firestoreService.subscribeToGlobalUpdate((update) => {
+      const unsubscribeGlobal = cloudService.subscribeToGlobalUpdate((update) => {
         if (update) {
           setGlobalUpdate(update);
           setState(prev => ({
@@ -164,7 +167,7 @@ export default function App() {
         }
       });
 
-      const unsubscribeAlerts = firestoreService.subscribeToGlobalAlert((alert) => {
+      const unsubscribeAlerts = cloudService.subscribeToGlobalAlert((alert) => {
         if (alert) {
           setActiveAlert(alert);
           const seenAlerts = JSON.parse(localStorage.getItem('seen_alerts') || '[]');
@@ -328,7 +331,7 @@ export default function App() {
                updatedReminders[index] = { ...updatedReminders[index], sent: true };
             }
             changed = true;
-            firestoreService.updateReminder(user.uid, updatedReminders[index]);
+            repository.updateReminder(updatedReminders[index]);
           }
           console.log(`Reminder sent: ${reminder.subject}`);
         } catch (error) {
@@ -397,9 +400,9 @@ export default function App() {
       
       // Async sync
       if (user) {
-        firestoreService.updateTransaction(user.uid, updatedTransaction);
+        repository.updateTransaction(updatedTransaction);
         // Also sync profile for consistency if needed, but here mostly accounts bit
-        nextAccounts.forEach(acc => firestoreService.updateAccount(user.uid, acc));
+        nextAccounts.forEach(acc => repository.updateAccount(acc));
       }
 
       return {
@@ -424,7 +427,7 @@ export default function App() {
         accountId: bankAcc?.id
       };
       
-      if (user) firestoreService.updateTransaction(user.uid, newTransaction);
+      if (user) repository.updateTransaction(newTransaction);
 
       return {
         ...prev,
@@ -447,8 +450,8 @@ export default function App() {
       }
 
       if (user) {
-        firestoreService.deleteTransaction(user.uid, id);
-        nextAccounts.forEach(acc => firestoreService.updateAccount(user.uid, acc));
+        repository.deleteTransaction(id);
+        nextAccounts.forEach(acc => repository.updateAccount(acc));
       }
 
       return {
@@ -465,7 +468,7 @@ export default function App() {
       const updatedAccounts = prev.accounts.map(t => t.id === id ? { ...t, [field]: value } : t);
       if (user) {
         const acc = updatedAccounts.find(a => a.id === id);
-        if (acc) firestoreService.updateAccount(user.uid, acc);
+        if (acc) repository.updateAccount(acc);
       }
       return { ...prev, accounts: updatedAccounts };
     });
@@ -474,14 +477,14 @@ export default function App() {
   const handleAddAccount = useCallback(() => {
     setState(prev => {
       const newAccount: Account = { id: Math.random().toString(36).substr(2, 9), name: '', type: 'Bank', balance: 0 };
-      if (user) firestoreService.updateAccount(user.uid, newAccount);
+      if (user) repository.updateAccount(newAccount);
       return { ...prev, accounts: [...prev.accounts, newAccount] };
     });
   }, [user]);
 
   const handleDeleteAccount = useCallback((id: string) => {
     setState(prev => {
-      if (user) firestoreService.deleteAccount(user.uid, id);
+      if (user) repository.deleteAccount(id);
       return { ...prev, accounts: prev.accounts.filter(t => t.id !== id) };
     });
   }, [user]);
@@ -492,7 +495,7 @@ export default function App() {
       const updatedInvestments = prev.investments.map(t => t.id === id ? { ...t, [field]: value } : t);
       if (user) {
         const inv = updatedInvestments.find(i => i.id === id);
-        if (inv) firestoreService.updateInvestment(user.uid, inv);
+        if (inv) repository.updateInvestment(inv);
       }
       return { ...prev, investments: updatedInvestments };
     });
@@ -537,14 +540,14 @@ export default function App() {
         avgPrice: 0, 
         currentPrice: currentPrice || 0 
       };
-      if (user) firestoreService.updateInvestment(user.uid, newInvestment);
+      if (user) repository.updateInvestment(newInvestment);
       return { ...prev, investments: [...prev.investments, newInvestment] };
     });
   }, [user]);
 
   const handleDeleteInvestment = useCallback((id: string) => {
     setState(prev => {
-      if (user) firestoreService.deleteInvestment(user.uid, id);
+      if (user) repository.deleteInvestment(id);
       return { ...prev, investments: prev.investments.filter(t => t.id !== id) };
     });
   }, [user]);
@@ -554,7 +557,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
       const updatedGoals = prev.goals.map(t => t.id === id ? { ...t, [field]: value } : t);
       if (user) {
         const goal = updatedGoals.find(g => g.id === id);
-        if (goal) firestoreService.updateGoal(user.uid, goal);
+        if (goal) repository.updateGoal(goal);
       }
       return { ...prev, goals: updatedGoals };
     });
@@ -563,14 +566,14 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
   const handleAddGoal = useCallback(() => {
     setState(prev => {
       const newGoal: Goal = { id: Math.random().toString(36).substr(2, 9), name: '', targetAmount: 0, currentAmount: 0, category: 'Savings' };
-      if (user) firestoreService.updateGoal(user.uid, newGoal);
+      if (user) repository.updateGoal(newGoal);
       return { ...prev, goals: [...prev.goals, newGoal] };
     });
   }, [user]);
 
   const handleDeleteGoal = useCallback((id: string) => {
     setState(prev => {
-      if (user) firestoreService.deleteGoal(user.uid, id);
+      if (user) repository.deleteGoal(id);
       return { ...prev, goals: prev.goals.filter(t => t.id !== id) };
     });
   }, [user]);
@@ -580,7 +583,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
       const updatedBudgets = prev.budgets.map(b => b.id === id ? { ...b, [field]: value } : b);
       if (user) {
         const budget = updatedBudgets.find(b => b.id === id);
-        if (budget) firestoreService.updateBudget(user.uid, budget);
+        if (budget) repository.updateBudget(budget);
       }
       return { ...prev, budgets: updatedBudgets };
     });
@@ -593,14 +596,14 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
         category,
         limit
       };
-      if (user) firestoreService.updateBudget(user.uid, newBudget);
+      if (user) repository.updateBudget(newBudget);
       return { ...prev, budgets: [...prev.budgets, newBudget] };
     });
   }, [user]);
 
   const handleDeleteBudget = useCallback((id: string) => {
     setState(prev => {
-      if (user) firestoreService.deleteBudget(user.uid, id);
+      if (user) repository.deleteBudget(id);
       return { ...prev, budgets: prev.budgets.filter(b => b.id !== id) };
     });
   }, [user]);
@@ -616,21 +619,21 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
         recurrence,
         dayOfMonth
       };
-      if (user) firestoreService.updateReminder(user.uid, newReminder);
+      if (user) repository.updateReminder(newReminder);
       return { ...prev, reminders: [...(prev.reminders || []), newReminder] };
     });
   }, [user]);
 
   const handleDeleteReminder = useCallback((id: string) => {
     setState(prev => {
-      if (user) firestoreService.deleteReminder(user.uid, id);
+      if (user) repository.deleteReminder(id);
       return { ...prev, reminders: (prev.reminders || []).filter(r => r.id !== id) };
     });
   }, [user]);
 
   const handleUpdateNotes = useCallback((notes: string) => {
     setState(prev => {
-      if (user) firestoreService.saveUserProfile(user.uid, { notes });
+      if (user) repository.saveUserProfile({ notes });
       return { ...prev, notes };
     });
   }, [user]);
@@ -638,7 +641,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
   const handleUpdatePatchNotes = useCallback((patchNotes: string) => {
     setState(prev => {
       if (user) {
-        firestoreService.saveUserProfile(user.uid, { patchNotes });
+        repository.saveUserProfile({ patchNotes });
       }
       return { ...prev, patchNotes };
     });
@@ -653,7 +656,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
     try {
       const nextVersion = globalUpdate.version + 1;
       console.log(`App.tsx: Broadcasting version v1.${nextVersion}...`);
-      await firestoreService.saveGlobalSystemUpdate(message, nextVersion);
+      await cloudService.saveGlobalSystemUpdate(message, nextVersion);
       console.log("App.tsx: Global update saved to Firestore.");
       
       const versionedMsg = message;
@@ -661,7 +664,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
       setState(s => ({ ...s, patchNotes: versionedMsg }));
       
       if (user) {
-        await firestoreService.saveUserProfile(user.uid, { patchNotes: versionedMsg });
+        await repository.saveUserProfile({ patchNotes: versionedMsg });
         console.log("App.tsx: User profile patch notes updated.");
       }
     } catch (error: any) {
@@ -693,8 +696,8 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
       });
 
       if (user) {
-        newTransactions.forEach(t => firestoreService.updateTransaction(user.uid, t));
-        nextAccounts.forEach(acc => firestoreService.updateAccount(user.uid, acc));
+        repository.saveTransactions(newTransactions);
+        repository.saveAccounts(nextAccounts);
       }
 
       return {
@@ -709,15 +712,15 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
     setState(prev => {
       if (user) {
         // Bulk save
-        firestoreService.saveUserProfile(user.uid, { 
+        repository.saveUserProfile({ 
           notes: imported.notes, 
           patchNotes: imported.patchNotes, 
           activeSheetId: prev.activeSheetId 
         });
-        imported.transactions.forEach(t => firestoreService.updateTransaction(user.uid, t));
-        imported.accounts.forEach(a => firestoreService.updateAccount(user.uid, a));
-        imported.investments.forEach(i => firestoreService.updateInvestment(user.uid, i));
-        imported.goals.forEach(g => firestoreService.updateGoal(user.uid, g));
+        repository.saveTransactions(imported.transactions);
+        repository.saveAccounts(imported.accounts);
+        repository.saveInvestments(imported.investments);
+        repository.saveGoals(imported.goals);
       }
       return {
         ...prev,
@@ -731,7 +734,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
     const sheet = INITIAL_SHEETS.find(s => s.type === type);
     if (sheet) {
       setState(prev => ({ ...prev, activeSheetId: sheet.id }));
-      if (user) firestoreService.saveUserProfile(user.uid, { activeSheetId: sheet.id });
+      if (user) repository.saveUserProfile({ activeSheetId: sheet.id });
     }
   }, [user]);
 
@@ -802,7 +805,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
           activeSheetId={state.activeSheetId}
           onSelectSheet={(id) => {
             setState(prev => ({ ...prev, activeSheetId: id }));
-            if (user) firestoreService.saveUserProfile(user.uid, { activeSheetId: id });
+            if (user) repository.saveUserProfile({ activeSheetId: id });
           }}
           user={user}
           onLogout={signOut}
@@ -935,7 +938,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
           activeSheetId={state.activeSheetId}
           onSelectSheet={(id) => {
             setState(prev => ({ ...prev, activeSheetId: id }));
-            if (user) firestoreService.saveUserProfile(user.uid, { activeSheetId: id });
+            if (user) repository.saveUserProfile({ activeSheetId: id });
           }}
           isAdmin={isAdmin}
           onShowAdmin={() => {
@@ -1027,34 +1030,16 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
                       
                       if (user) {
                         try {
-                          await firestoreService.saveUserProfile(user.uid, { 
+                          await repository.saveUserProfile({ 
                             notes: '', 
                             patchNotes: state.patchNotes 
                           });
 
-                          const deletePromises: Promise<any>[] = [];
-                          state.transactions.forEach(t => {
-                            deletePromises.push(firestoreService.deleteTransaction(user.uid, t.id));
-                          });
-                          state.budgets.forEach(b => {
-                            deletePromises.push(firestoreService.deleteBudget(user.uid, b.id));
-                          });
-                          state.goals.forEach(g => {
-                            deletePromises.push(firestoreService.deleteGoal(user.uid, g.id));
-                          });
-                          state.accounts.forEach(a => {
-                            deletePromises.push(firestoreService.deleteAccount(user.uid, a.id));
-                          });
-                          state.investments.forEach(i => {
-                            deletePromises.push(firestoreService.deleteInvestment(user.uid, i.id));
-                          });
-                          
-                          await Promise.all(deletePromises);
-
-                          const accountPromises = defaultAccounts.map(a => 
-                            firestoreService.updateAccount(user.uid, a)
-                          );
-                          await Promise.all(accountPromises);
+                          // מוחק את כל 5 הישויות ואז כותב מחדש את חשבונות
+                          // ברירת המחדל. clearAllData מוחק גם רשומות יתומות
+                          // שכבר לא נמצאות ב-state.
+                          await repository.clearAllData();
+                          await repository.saveAccounts(defaultAccounts);
                         } catch (err) {
                           console.error("Error clearing cloud data:", err);
                         }

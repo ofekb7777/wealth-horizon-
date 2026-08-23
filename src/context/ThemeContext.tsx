@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { repository } from '../data';
 import { useAuth } from './AuthContext';
 
 export type Theme = 'default' | 'mono' | 'forest' | 'sunset' | 'lavender' | 'crimson' | 'gold' | 'royal';
@@ -28,17 +27,16 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const fetchTheme = async () => {
       if (user) {
         try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            if (data.theme) {
-              setThemeState(data.theme as Theme);
+          const profile = await repository.getUserProfile();
+          if (profile) {
+            if (profile.theme) {
+              setThemeState(profile.theme as Theme);
             }
-            if (data.bgEffect) {
-              setBgEffectState(data.bgEffect as BgEffect);
+            if (profile.bgEffect) {
+              setBgEffectState(profile.bgEffect as BgEffect);
             }
-            if (data.monoStyle) {
-              setMonoStyleState(data.monoStyle as MonoStyle);
+            if (profile.monoStyle) {
+              setMonoStyleState(profile.monoStyle as MonoStyle);
             }
           }
         } catch (error) {
@@ -62,7 +60,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setThemeState(newTheme);
     if (user) {
       try {
-        await setDoc(doc(db, 'users', user.uid), { theme: newTheme }, { merge: true });
+        await repository.saveUserProfile({ theme: newTheme });
       } catch (error) {
         console.error("Failed to save user theme:", error);
       }
@@ -73,7 +71,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setBgEffectState(newEffect);
     if (user) {
       try {
-        await setDoc(doc(db, 'users', user.uid), { bgEffect: newEffect }, { merge: true });
+        await repository.saveUserProfile({ bgEffect: newEffect });
       } catch (error) {
         console.error("Failed to save user effect:", error);
       }
@@ -84,7 +82,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setMonoStyleState(newStyle);
     if (user) {
       try {
-        await setDoc(doc(db, 'users', user.uid), { monoStyle: newStyle }, { merge: true });
+        await repository.saveUserProfile({ monoStyle: newStyle });
       } catch (error) {
         console.error("Failed to save user mono style:", error);
       }

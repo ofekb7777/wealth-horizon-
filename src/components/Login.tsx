@@ -3,10 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import { LogIn, ShieldCheck, Zap, Globe, Puzzle, Download, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useVersion } from '../context/VersionContext';
-// @ts-ignore
-import firebaseConfig from '../../firebase-applet-config.json';
+import { isAuthConfigured } from '../lib/firebase';
 
-const isValidConfig = firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "";
+const isValidConfig = isAuthConfigured;
 
 interface LoginProps {}
 
