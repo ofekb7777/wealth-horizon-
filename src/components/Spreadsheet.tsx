@@ -268,7 +268,7 @@ export default function Spreadsheet({
               onClick={() => onAddTransaction(viewType)}
               className="mt-4 text-pink-500 text-[10px] font-black uppercase tracking-widest hover:underline italic"
             >
-              Initialize first entry &darr;
+              {txt.ledger.addFirst} &darr;
             </button>
           </div>
         )}

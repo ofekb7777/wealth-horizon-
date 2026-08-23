@@ -1,4 +1,5 @@
 import { Plus, Trash2, Search, RefreshCcw, ExternalLink, TrendingUp, TrendingDown, Target, Zap, Activity } from 'lucide-react';
+import { txt, trendLabel } from '../i18n/he';
 import { fetchPrices, fetchAnalytics as fetchTickerAnalytics, searchTickers } from '../services/marketData';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Investment, Currency, CURRENCIES } from '../types';
@@ -167,11 +168,11 @@ export default function Investments({
         >
           <div className="absolute inset-0 bg-linear-to-r from-pink-500 to-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
           <Plus className="h-4 w-4 text-zinc-900 relative z-10 transition-colors" />
-          <span className="text-[10px] font-black text-zinc-900 relative z-10 uppercase tracking-widest whitespace-nowrap">Connect Asset</span>
+          <span className="text-[10px] font-black text-zinc-900 relative z-10 uppercase tracking-widest whitespace-nowrap">{txt.investments.connect}</span>
         </button>
 
         <div className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] hidden md:block">
-          Portfolio Management System v{version}
+          {txt.investments.portfolioSystem} v{version}
         </div>
       </div>
 
@@ -181,8 +182,8 @@ export default function Investments({
           <div className="glass-card rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-white/5">
             <div className="p-6 md:p-10 border-b border-white/5 flex justify-between items-center shrink-0">
               <div>
-                <h3 className="text-2xl md:text-4xl font-black font-display text-zinc-100 tracking-tighter uppercase leading-none italic">Asset <span className="gradient-text">Selector</span></h3>
-                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mt-2">Global Market Registry // Live Node</p>
+                <h3 className="text-2xl md:text-4xl font-black font-display text-zinc-100 tracking-tighter uppercase leading-none italic">{txt.investments.connect}</h3>
+                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mt-2">{txt.investments.subtitle}</p>
               </div>
               <button 
                 onClick={() => {
@@ -203,7 +204,7 @@ export default function Investments({
                   id="investment-search-input"
                   autoFocus
                   type="text"
-                  placeholder="IDENTIFY TICKER..."
+                  placeholder={txt.investments.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="w-full bg-transparent border-b-2 border-white/5 py-3 md:py-6 ps-10 md:ps-14 text-xl md:text-4xl font-black text-zinc-100 placeholder:text-zinc-800 outline-none transition-all uppercase tracking-tighter focus:border-pink-500/50 italic"
@@ -218,7 +219,7 @@ export default function Investments({
               <div className="space-y-4">
                 {tickerResults.length > 0 ? (
                   <>
-                    <h4 className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em] px-2 mb-2">Search Results</h4>
+                    <h4 className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em] px-2 mb-2">{txt.investments.searchResults}</h4>
                     {tickerResults.map((t) => (
                       <button
                         key={t.symbol}
@@ -244,7 +245,7 @@ export default function Investments({
                   </>
                 ) : errorDetails ? (
                   <div className="p-10 glass-card rounded-[2.5rem] text-center border-rose-500/20">
-                    <div className="text-zinc-100 font-black uppercase tracking-widest mb-2">Protocol Error</div>
+                    <div className="text-zinc-100 font-black uppercase tracking-widest mb-2">{txt.investments.searchNeedsNetwork}</div>
                     <div className="text-rose-400 text-[10px] font-mono">{errorDetails}</div>
                   </div>
                 ) : searchQuery ? (
@@ -254,7 +255,7 @@ export default function Investments({
                   </div>
                 ) : (
                   <div className="space-y-6">
-                     <h4 className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em] px-2">Strategic Benchmarks</h4>
+                     <h4 className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em] px-2">{txt.investments.performance}</h4>
                      <div className="grid grid-cols-2 gap-4">
                        {[
                          { s: 'SPY', n: 'S&P 500' },
@@ -295,9 +296,9 @@ export default function Investments({
           {/* Main Registry Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <h2 className="text-6xl font-black font-display text-zinc-100 tracking-tighter uppercase italic leading-none">Security <span className="gradient-text">Registry</span></h2>
+              <h2 className="text-6xl font-black font-display text-zinc-100 tracking-tighter uppercase italic leading-none">{txt.investments.title}</h2>
               <div className="flex items-center gap-4 mt-6">
-                <p className="text-xs font-black text-zinc-350 uppercase tracking-widest">Integrated Portfolio Node</p>
+                <p className="text-xs font-black text-zinc-350 uppercase tracking-widest">{txt.investments.subtitle}</p>
                 {lastSynced && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-teal-500/10 rounded-full border border-teal-500/20">
                     <RefreshCcw className="h-3 w-3 text-teal-350 animate-pulse" />
@@ -320,7 +321,7 @@ export default function Investments({
                         : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5 border border-transparent font-extrabold'
                     }`}
                   >
-                    {field === 'netWorth' ? 'Sort by Net Worth' : 'Sort by ' + field}
+                    {field === 'netWorth' ? txt.investments.sortValue : field === 'ticker' ? txt.investments.sortTicker : txt.investments.sortPrice}
                   </button>
                 ))}
               </div>
@@ -354,7 +355,7 @@ export default function Investments({
             <button
                onClick={() => onDeleteInvestment(t.id)}
                className="absolute -top-3 -end-3 z-50 text-zinc-400 hover:text-rose-400 p-3 rounded-full bg-zinc-900 border border-white/10 shadow-2xl transition-all opacity-0 group-hover:opacity-100 active:scale-95"
-               title="Remove Investment"
+               title={txt.investments.remove}
             >
               <Trash2 className="h-5 w-5" />
             </button>
@@ -363,7 +364,7 @@ export default function Investments({
                  <div className="flex flex-col items-start">
                     <div className="flex items-center justify-between w-full mb-3">
                        <div className="flex items-center gap-2">
-                          <span className="text-zinc-350 text-xs font-extrabold tracking-widest uppercase">Security Cluster</span>
+                          <span className="text-zinc-350 text-xs font-extrabold tracking-widest uppercase">{txt.investments.title}</span>
                           {t.exchange && <span className="px-2.5 py-1 bg-zinc-800 rounded-lg text-[10px] font-black text-teal-300 uppercase tracking-widest border border-white/5">{t.exchange}</span>}
                        </div>
                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
@@ -376,7 +377,7 @@ export default function Investments({
                                }
                              }}
                              className="text-zinc-500 hover:text-teal-400 p-2 rounded-full hover:bg-teal-500/10 transition-all"
-                             title="Manual Sync"
+                             title={txt.investments.manualSync}
                           >
                              <RefreshCcw className="h-4 w-4" />
                           </button>
@@ -393,7 +394,7 @@ export default function Investments({
                  <div className="flex flex-col items-start md:items-end">
                     <div className="flex items-center gap-2 mb-3">
                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                       <span className="text-zinc-350 text-xs font-extrabold tracking-widest uppercase">Live Market Node</span>
+                       <span className="text-zinc-350 text-xs font-extrabold tracking-widest uppercase">{txt.investments.currentPrice}</span>
                     </div>
                     <motion.div 
                       key={t.currentPrice}
@@ -412,7 +413,7 @@ export default function Investments({
 
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 py-6 border-t border-white/5 mt-6 border-b border-white/5 mb-6">
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-xs sm:text-sm uppercase text-zinc-300 font-extrabold tracking-widest">Ticker</span>
+                    <span className="text-xs sm:text-sm uppercase text-zinc-300 font-extrabold tracking-widest">{txt.investments.ticker}</span>
                     <input
                       type="text"
                       value={t.ticker}
@@ -423,7 +424,7 @@ export default function Investments({
                   </div>
                 <div className="col-span-2 flex flex-col gap-1.5 group/holdings relative">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs sm:text-sm uppercase text-zinc-300 font-extrabold tracking-widest">Holdings & Amount</span>
+                    <span className="text-xs sm:text-sm uppercase text-zinc-300 font-extrabold tracking-widest">{txt.investments.holdings}</span>
                   </div>
                   <div className="flex gap-2 w-full">
                     <div className="relative w-full">
@@ -433,7 +434,7 @@ export default function Investments({
                         onChange={(e) => onUpdateInvestment(t.id, 'shares', parseFloat(e.target.value) || 0)}
                         onWheel={(e) => (e.target as HTMLInputElement).blur()}
                         className="w-full bg-zinc-800/40 px-4 py-3 rounded-2xl outline-none font-mono text-lg text-zinc-100 font-black focus:bg-zinc-800 transition-all border border-white/5 focus:border-white/20 focus:ring-0 peer opacity-0 focus:opacity-100"
-                        placeholder="Shares"
+                        placeholder={txt.investments.shares}
                       />
                       <div className="absolute inset-0 pointer-events-none px-4 py-3 font-mono text-lg text-zinc-100 flex items-center peer-focus:hidden font-black truncate">
                         {t.shares.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
@@ -455,7 +456,7 @@ export default function Investments({
                         }}
                         onWheel={(e) => (e.target as HTMLInputElement).blur()}
                         className="w-full bg-zinc-800/40 px-4 py-3 rounded-2xl outline-none font-mono text-lg text-zinc-100 font-black focus:bg-zinc-800 transition-all border border-white/5 focus:border-white/20 focus:ring-0 peer opacity-0 focus:opacity-100"
-                        placeholder="Amount"
+                        placeholder={txt.investments.avgPrice}
                       />
                       <div className="absolute inset-0 pointer-events-none px-4 py-3 font-mono text-lg text-zinc-100 flex items-center peer-focus:hidden font-black truncate">
                         {(t.shares * t.avgPrice * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -466,7 +467,7 @@ export default function Investments({
 
                 <div className="flex flex-col gap-1.5 group/buying relative min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs sm:text-sm uppercase text-zinc-300 font-extrabold tracking-widest">Buying Point {symbol}</span>
+                    <span className="text-xs sm:text-sm uppercase text-zinc-300 font-extrabold tracking-widest">{txt.investments.buyPoint} {symbol}</span>
                   </div>
                   <div className="relative w-full min-w-0">
                     <input
@@ -484,7 +485,7 @@ export default function Investments({
                 </div>
                 <div className="flex flex-col gap-1.5 group/quote relative min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs sm:text-sm uppercase text-zinc-300 font-extrabold tracking-widest">Live Quote {symbol}</span>
+                    <span className="text-xs sm:text-sm uppercase text-zinc-300 font-extrabold tracking-widest">{txt.investments.liveQuote} {symbol}</span>
                   </div>
                   <div className="relative w-full min-w-0 px-4 py-3 border border-pink-400/20 rounded-2xl bg-pink-400/5">
                     <div className="font-mono text-lg text-pink-400 font-black truncate italic">
@@ -526,9 +527,9 @@ export default function Investments({
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-2">
                           <Zap className="h-4 w-4 text-zinc-400" />
-                          <span className="text-xs font-black text-zinc-350 uppercase tracking-widest">Technical Sentiment</span>
+                          <span className="text-xs font-black text-zinc-350 uppercase tracking-widest">{txt.investments.trend}</span>
                        </div>
-                       <div className="text-xs font-black text-teal-300 px-3 py-1 bg-teal-500/10 rounded-full border border-teal-500/35 uppercase tracking-widest">Live Engine</div>
+                       <div className="text-xs font-black text-teal-300 px-3 py-1 bg-teal-500/10 rounded-full border border-teal-500/35 uppercase tracking-widest">{txt.investments.trend}</div>
                     </div>
                     
                     <div className="flex-1 flex flex-col justify-center gap-6">
@@ -554,16 +555,16 @@ export default function Investments({
                        </div>
                        
                        <div className="flex justify-between items-center px-1">
-                          <span className="text-xs font-black text-rose-500 uppercase tracking-widest">Strong Sell</span>
+                          <span className="text-xs font-black text-rose-500 uppercase tracking-widest">{txt.trend['Strong Sell']}</span>
                           <div className="flex flex-col items-center">
                              <div className={`text-2xl font-black font-display uppercase italic tracking-tighter ${
                                 (analyticsData[t.ticker]?.score || 0) > 0 ? 'text-emerald-400' : 
                                 (analyticsData[t.ticker]?.score || 0) < 0 ? 'text-rose-400' : 'text-zinc-400'
                              }`}>
-                                {analyticsData[t.ticker]?.rating || 'Analyzing...'}
+                                {analyticsData[t.ticker]?.rating ? trendLabel(analyticsData[t.ticker].rating) : '—'}
                              </div>
                           </div>
-                          <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">Strong Buy</span>
+                          <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">{txt.trend['Strong Buy']}</span>
                        </div>
 
                        {/* MA Indicators */}
@@ -589,7 +590,7 @@ export default function Investments({
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-2">
                           <Target className="h-4 w-4 text-zinc-400" />
-                          <span className="text-xs font-black text-zinc-350 uppercase tracking-widest">Asset Trajectory</span>
+                          <span className="text-xs font-black text-zinc-350 uppercase tracking-widest">{txt.investments.performance}</span>
                        </div>
                        {analyticsData[t.ticker]?.history && (
                           <div className="text-xs font-black text-teal-300 px-3 py-1 bg-teal-500/10 rounded-full border border-teal-500/35 uppercase tracking-widest">{timeframe} Snapshot</div>
@@ -655,7 +656,7 @@ export default function Investments({
       })}
           {filteredInvestments.length === 0 && (
             <div className="text-center text-zinc-500 mt-10">
-              {searchQuery ? `No results for "${searchQuery}"` : "No active investments. Add an asset above."}
+              {searchQuery ? `${txt.investments.noResultsFor} "${searchQuery}"` : txt.investments.empty}
             </div>
           )}
           </div>

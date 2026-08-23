@@ -1,4 +1,5 @@
 import React from 'react';
+import { txt } from '../i18n/he';
 import { Sheet } from '../types';
 import { LayoutGrid, TrendingDown, TrendingUp, Wallet, LineChart, Home as HomeIcon, PieChart, Settings } from 'lucide-react';
 import { motion } from 'motion/react';

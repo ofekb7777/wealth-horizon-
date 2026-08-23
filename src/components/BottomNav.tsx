@@ -1,4 +1,5 @@
 import { LayoutGrid, TrendingDown, TrendingUp, Wallet, LineChart, Home as HomeIcon, PieChart, Settings } from 'lucide-react';
+import { txt } from '../i18n/he';
 import { Sheet } from '../types';
 
 interface BottomNavProps {
@@ -55,7 +56,7 @@ export default function BottomNav({ sheets, activeSheetId, onSelectSheet, onShow
                 <Settings className="h-5 w-5" />
              </div>
              <span className="text-[9px] font-black uppercase tracking-widest opacity-40">
-               Settings
+               {txt.settings.title}
              </span>
           </button>
       </div>

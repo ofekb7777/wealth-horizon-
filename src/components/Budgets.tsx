@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { txt, categoryLabel } from '../i18n/he';
 import { Budget, SpreadsheetState, Currency, CURRENCIES, EXPENSE_CATEGORIES } from '../types';
 import { Plus, Trash2, ChevronLeft, ChevronRight, AlertCircle, PieChart, TrendingDown, Check, LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -74,7 +75,7 @@ export default function Budgets({
   const formattedMonthName = useMemo(() => {
     const [year, col] = selectedMonth.split('-').map(Number);
     const date = new Date(year, col - 1, 1);
-    return date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    return date.toLocaleString('he-IL', { month: 'long', year: 'numeric' });
   }, [selectedMonth]);
 
   // Retrieve unbudgeted expense categories
@@ -200,7 +201,7 @@ export default function Budgets({
       <div className="h-16 bg-zinc-900/50 backdrop-blur-md border-b border-white/5 flex justify-between items-center px-6 shrink-0 shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <PieChart className="h-5 w-5 text-pink-500 animate-pulse" />
-          <span className="text-sm font-black uppercase tracking-widest text-zinc-100">Budget command center</span>
+          <span className="text-sm font-black uppercase tracking-widest text-zinc-100">{txt.budgets.subtitle}</span>
         </div>
         
         {/* Month selector */}
@@ -233,19 +234,19 @@ export default function Budgets({
             
             {/* Total Budget */}
             <div className="glass-card rounded-3xl p-6 border border-white/5 bg-zinc-900/30">
-              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] block mb-2">Total Budget Limit</span>
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] block mb-2">{txt.budgets.totalLimit}</span>
               <div className="flex items-baseline gap-1">
                 <span className="font-mono text-xl text-zinc-400">{symbol}</span>
                 <span className="font-mono text-3xl font-black text-zinc-100">
                   {totalBudgetDisplay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
-              <p className="text-[9px] text-zinc-500 font-medium uppercase mt-2">Aggregated limit targets</p>
+              <p className="text-[9px] text-zinc-500 font-medium uppercase mt-2">{txt.budgets.subtitle}</p>
             </div>
 
             {/* Total Spent */}
             <div className={`glass-card rounded-3xl p-6 border ${isOverallBudgetExceeded ? 'border-rose-500/20 bg-rose-950/5' : 'border-white/5 bg-zinc-900/30'}`}>
-              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] block mb-2">Total Spent (This Month)</span>
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] block mb-2">{txt.budgets.spent}</span>
               <div className="flex items-baseline gap-1">
                 <span className="font-mono text-xl text-zinc-400">{symbol}</span>
                 <span className={`font-mono text-3xl font-black ${isOverallBudgetExceeded ? 'text-rose-400' : 'text-pink-500 italic'}`}>
@@ -258,13 +259,13 @@ export default function Budgets({
                   Over-budget
                 </div>
               ) : (
-                <p className="text-[9px] text-emerald-400 font-bold uppercase mt-2">Excellent under budget</p>
+                <p className="text-[9px] text-emerald-400 font-bold uppercase mt-2">{txt.budgets.excellent}</p>
               )}
             </div>
 
             {/* Remaining */}
             <div className={`glass-card rounded-3xl p-6 border ${totalRemainingDisplay < 0 ? 'border-rose-500/20 bg-rose-950/5' : 'border-white/5 bg-zinc-900/30'}`}>
-              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] block mb-2">Aggregate Remaining</span>
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] block mb-2">{txt.budgets.remaining}</span>
               <div className="flex items-baseline gap-1">
                 <span className="font-mono text-xl text-zinc-400">{symbol}</span>
                 <span className={`font-mono text-3xl font-black ${totalRemainingDisplay < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
@@ -272,9 +273,9 @@ export default function Budgets({
                 </span>
               </div>
               {totalRemainingDisplay < 0 ? (
-                <p className="text-[9px] text-rose-500 font-bold uppercase mt-2">Limit exceeded by {symbol}{Math.abs(totalRemainingDisplay).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                <p className="text-[9px] text-rose-500 font-bold uppercase mt-2">{txt.budgets.exceededBy} {symbol}{Math.abs(totalRemainingDisplay).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
               ) : (
-                <p className="text-[9px] text-emerald-400 font-bold uppercase mt-2">Safety margin intact</p>
+                <p className="text-[9px] text-emerald-400 font-bold uppercase mt-2">{txt.budgets.safetyMargin}</p>
               )}
             </div>
 
@@ -291,7 +292,7 @@ export default function Budgets({
                 <AlertCircle className="h-5 w-5 animate-bounce" />
               </div>
               <div>
-                <h4 className="text-xs font-black text-rose-400 uppercase tracking-widest">Attention Required</h4>
+                <h4 className="text-xs font-black text-rose-400 uppercase tracking-widest">{txt.budgets.attention}</h4>
                 <p className="text-[10px] text-zinc-400 font-medium mt-1">
                   You have exceeded the allocation in <span className="text-rose-300 font-bold">{exceededCount} {exceededCount === 1 ? 'category' : 'categories'}</span>. Review individual limits and adjust expenditure patterns below.
                 </p>
@@ -305,8 +306,8 @@ export default function Budgets({
             <div className="lg:col-span-2 space-y-6">
               
               <div className="flex justify-between items-center">
-                <h3 className="text-xs font-black text-zinc-400 uppercase tracking-[0.2em]">Category Limits</h3>
-                <span className="text-[10px] font-black text-zinc-500 uppercase">{budgets.length} Budget Targets</span>
+                <h3 className="text-xs font-black text-zinc-400 uppercase tracking-[0.2em]">{txt.budgets.title}</h3>
+                <span className="text-[10px] font-black text-zinc-500 uppercase">{budgets.length} {txt.budgets.targetsCount}</span>
               </div>
 
               <div className="space-y-4">
@@ -325,7 +326,7 @@ export default function Budgets({
                       <button
                         onClick={() => onDeleteBudget(b.id)}
                         className="absolute top-4 end-4 text-zinc-600 hover:text-rose-400 p-2 rounded-full hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
-                        title="Remove budget target"
+                        title={txt.budgets.deleteTarget}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -334,7 +335,7 @@ export default function Budgets({
                         {/* Title and Badge */}
                         <div className="flex justify-between items-center">
                           <div className="space-y-1">
-                            <span className="text-xs font-black text-zinc-200 uppercase tracking-wider block">{b.category}</span>
+                            <span className="text-xs font-black text-zinc-200 uppercase tracking-wider block">{categoryLabel(b.category)}</span>
                             <span className="text-[9px] text-zinc-500 font-medium uppercase tracking-widest block">
                               Spending Target
                             </span>
@@ -375,7 +376,7 @@ export default function Budgets({
                           </div>
 
                           <div className="space-y-0.5 text-end">
-                            <span className="text-[8px] uppercase text-zinc-500 font-black tracking-widest block">Actual Spent</span>
+                            <span className="text-[8px] uppercase text-zinc-500 font-black tracking-widest block">{txt.budgets.spent}</span>
                             <span className="font-mono text-xs font-bold text-zinc-300 block">
                               {symbol}{b.spentDisplay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
@@ -413,8 +414,8 @@ export default function Budgets({
                 {budgets.length === 0 && (
                   <div className="text-center py-16 glass-card rounded-[2rem] border-dashed border-white/10">
                     <TrendingDown className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
-                    <div className="text-zinc-600 text-xs font-black uppercase tracking-[0.2em] italic">No active budget allocations set</div>
-                    <p className="text-[9px] text-zinc-400 mt-1 max-w-sm mx-auto">Define monthly spending limits for the expense categories using the registration controller on the right side.</p>
+                    <div className="text-zinc-600 text-xs font-black uppercase tracking-[0.2em] italic">{txt.budgets.empty}</div>
+                    <p className="text-[9px] text-zinc-400 mt-1 max-w-sm mx-auto">{txt.budgets.emptyHint}</p>
                   </div>
                 )}
               </div>
@@ -427,8 +428,8 @@ export default function Budgets({
               {/* Registration Form */}
               <div className="glass-card rounded-[2rem] p-6 border border-white/5 bg-zinc-900/30 space-y-6">
                 <div>
-                  <h3 className="text-xs font-black text-zinc-200 uppercase tracking-widest">Create budget target</h3>
-                  <p className="text-[9px] text-zinc-500 mt-1">Configure spending limits for any standard or custom category.</p>
+                  <h3 className="text-xs font-black text-zinc-200 uppercase tracking-widest">{txt.budgets.create}</h3>
+                  <p className="text-[9px] text-zinc-500 mt-1">{txt.budgets.createHint}</p>
                 </div>
 
                 <form onSubmit={handleCreateBudget} className="space-y-4">
@@ -442,7 +443,7 @@ export default function Budgets({
                         newCategoryType === 'existing' ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
-                      Presets
+                      {txt.budgets.presets}
                     </button>
                     <button
                       type="button"
@@ -451,13 +452,13 @@ export default function Budgets({
                         newCategoryType === 'custom' ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
-                      Custom
+                      {txt.budgets.custom}
                     </button>
                   </div>
 
                   {newCategoryType === 'existing' ? (
                     <div className="space-y-2">
-                      <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest ps-1">Category preset</label>
+                      <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest ps-1">{txt.common.category}</label>
                       <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
@@ -465,19 +466,19 @@ export default function Budgets({
                       >
                         {availablePresetCategories.length > 0 ? (
                           availablePresetCategories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
+                            <option key={cat} value={cat}>{categoryLabel(cat)}</option>
                           ))
                         ) : (
-                          <option value="">All templates allocated</option>
+                          <option value="">{txt.budgets.allAllocated}</option>
                         )}
                       </select>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest ps-1">Custom Category Name</label>
+                      <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest ps-1">{txt.budgets.customCategory}</label>
                       <input
                         type="text"
-                        placeholder="e.g. Vacation, Holiday"
+                        placeholder={txt.budgets.customPlaceholder}
                         value={customCategoryName}
                         onChange={(e) => setCustomCategoryName(e.target.value)}
                         className="w-full bg-zinc-800 border border-white/10 text-zinc-200 px-4 py-2.5 rounded-2xl outline-none font-black text-[10px] uppercase placeholder-zinc-500 tracking-wider"
@@ -487,7 +488,7 @@ export default function Budgets({
 
                   {/* Limit input */}
                   <div className="space-y-2">
-                    <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest ps-1">Monthly Spending Limit ({symbol})</label>
+                    <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest ps-1">{txt.budgets.monthlyLimit} ({symbol})</label>
                     <div className="relative">
                       <span className="absolute start-4 top-1/2 -translate-y-1/2 text-zinc-500 font-mono text-xs">{symbol}</span>
                       <input
@@ -513,7 +514,7 @@ export default function Budgets({
                     className="w-full relative py-3 bg-zinc-100 rounded-2xl overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-95 cursor-pointer flex items-center justify-center font-black text-[10px] uppercase tracking-widest text-zinc-900"
                   >
                     <div className="absolute inset-0 bg-linear-to-r from-pink-500 to-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <span className="relative z-10 font-bold group-hover:text-zinc-900">Establish budget limit</span>
+                    <span className="relative z-10 font-bold group-hover:text-zinc-900">{txt.budgets.setLimit}</span>
                   </button>
 
                 </form>
@@ -523,7 +524,7 @@ export default function Budgets({
               {budgets.length > 0 && (
                 <div className="glass-card rounded-[2rem] p-6 border border-white/5 bg-zinc-900/30 space-y-4">
                   <div>
-                    <h3 className="text-xs font-black text-zinc-300 uppercase tracking-widest">Compare metrics</h3>
+                    <h3 className="text-xs font-black text-zinc-300 uppercase tracking-widest">{txt.budgets.title}</h3>
                     <p className="text-[9px] text-zinc-500 mt-1">Real-time budget targets vs actual utilization.</p>
                   </div>
 
@@ -554,15 +555,15 @@ export default function Budgets({
                   <div className="flex items-center justify-center gap-4 text-[8px] font-black uppercase text-zinc-500 tracking-wider">
                     <div className="flex items-center gap-1">
                       <div className="w-2.5 h-2.5 bg-zinc-700 rounded-sm" />
-                      <span>Limit</span>
+                      <span>{txt.budgets.limit}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <div className="w-2.5 h-2.5 bg-pink-500 rounded-sm" />
-                      <span>Spent</span>
+                      <span>{txt.budgets.spent}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <div className="w-2.5 h-2.5 bg-rose-400 rounded-sm" />
-                      <span>Over Budget</span>
+                      <span>{txt.budgets.overBudget}</span>
                     </div>
                   </div>
                 </div>
