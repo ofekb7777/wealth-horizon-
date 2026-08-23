@@ -8,7 +8,7 @@
  * הם מיוצאים מחדש מכאן כדי שקומפוננטות קיימות ימשיכו לייבא מאותו מקום.
  */
 export type {
-  Transaction, Account, Investment, Goal, Budget, Reminder, UserProfile, AppUser,
+  Transaction, Account, Investment, Goal, Budget, Reminder, UserProfile,
 } from './data/types';
 
 import type {

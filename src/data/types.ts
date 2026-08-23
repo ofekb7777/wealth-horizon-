@@ -71,20 +71,7 @@ export interface UserProfile {
   patchNotes?: string;
 }
 
-/**
- * המשתמש המחובר, בטיפוס משלנו.
- * קיים כדי שקומפוננטות לא יצטרכו לייבא `User` מ-`firebase/auth`.
- * בשלב 2, כשאין יותר חשבונות, הטיפוס הזה נמחק.
- */
-export interface AppUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-  emailVerified: boolean;
-}
-
-/** כל נתוני המשתמש בקריאה אחת — מה ש-App.tsx טוען בעלייה. */
+/** כל הנתונים בקריאה אחת — מה ש-App.tsx טוען בעלייה. */
 export interface UserData {
   profile: UserProfile;
   transactions: Transaction[];

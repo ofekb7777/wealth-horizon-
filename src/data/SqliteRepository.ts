@@ -6,7 +6,7 @@ import { Repository } from './Repository';
 import { LATEST_VERSION, pendingMigrations } from './migrations';
 import {
   Transaction, Account, Investment, Goal, Budget, Reminder,
-  UserProfile, UserData, AppUser,
+  UserProfile, UserData,
 } from './types';
 
 const DB_NAME = 'wealth_horizon';
@@ -164,12 +164,7 @@ export class SqliteRepository implements Repository {
     return { ...row, sent: !!row.sent } as Reminder;
   }
 
-  // --- משתמש ופרופיל ---
-
-  /** אין משתמשים ב-SQLite מקומי. קיים רק כדי לקיים את החוזה. */
-  async syncUser(_user: AppUser): Promise<void> {
-    return;
-  }
+  // --- פרופיל ונתונים ---
 
   async fetchUserData(): Promise<UserData> {
     const [profile, transactions, accounts, investments, goals, budgets, reminders] = await Promise.all([

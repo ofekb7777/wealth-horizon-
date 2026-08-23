@@ -1,6 +1,6 @@
 import {
   Transaction, Account, Investment, Goal, Budget, Reminder,
-  UserProfile, UserData, AppUser,
+  UserProfile, UserData,
 } from './types';
 
 /**
@@ -23,13 +23,10 @@ import {
  *    (מלכודת #2 ב-CLAUDE.md).
  */
 export interface Repository {
-  /** האם שכבת הנתונים זמינה בכלל (למשל: Firebase מוגדר, DB נפתח). */
+  /** האם המסד פתוח ומוכן לשימוש. */
   isReady(): boolean;
 
-  // --- משתמש ופרופיל ---
-
-  /** רושם/מעדכן את פרטי המשתמש המחובר. ב-SQLite: no-op. */
-  syncUser(user: AppUser): Promise<void>;
+  // --- פרופיל ---
 
   /** טוען את כל נתוני המשתמש בקריאה אחת. `null` אם אין נתונים. */
   fetchUserData(): Promise<UserData | null>;
