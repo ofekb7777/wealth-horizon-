@@ -1,4 +1,5 @@
 import { Plus, Trash2, Search, RefreshCcw, ExternalLink, TrendingUp, TrendingDown, Target, Zap, Activity } from 'lucide-react';
+import { fetchPrices, fetchAnalytics as fetchTickerAnalytics, searchTickers } from '../services/marketData';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Investment, Currency, CURRENCIES } from '../types';
 import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
@@ -64,24 +65,20 @@ export default function Investments({
 
   // Fetch analytics for all investments
   useEffect(() => {
-    const fetchAnalytics = async () => {
+    const loadAnalytics = async () => {
       const tickers = investments.map(i => i.ticker).filter(Boolean);
       if (tickers.length === 0) return;
-      
+
       setIsFetchingAnalytics(true);
       try {
-        const res = await fetch(`/api/analytics?tickers=${tickers.join(',')}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setAnalyticsData(data);
-      } catch (e) {
-        console.error("Analytics fetch failed", e);
+        // בלי רשת מוחזר אובייקט ריק — הגרפים פשוט לא מתעדכנים.
+        setAnalyticsData(await fetchTickerAnalytics(tickers));
       } finally {
         setIsFetchingAnalytics(false);
       }
     };
 
-    fetchAnalytics();
+    loadAnalytics();
   }, [investments.length]); // Refetch if count changes, otherwise rely on manual sync if needed
 
   // Debounce search
@@ -102,18 +99,11 @@ export default function Investments({
     setIsSearching(true);
     setErrorDetails(null);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(val)}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (data.error) {
-        setErrorDetails(data.details || data.error);
-        setTickerResults([]);
-      } else {
-        setTickerResults(data);
+      const results = await searchTickers(val);
+      setTickerResults(results);
+      if (results.length === 0) {
+        setErrorDetails('No results. Ticker search needs an internet connection.');
       }
-    } catch (err) {
-      console.error('Search error:', err);
-      setErrorDetails('Network error occurred.');
     } finally {
       setIsSearching(false);
     }
@@ -380,16 +370,10 @@ export default function Investments({
                           <button
                              onClick={async () => {
                                if (!t.ticker) return;
-                               try {
-                                 const res = await fetch(`/api/prices?tickers=${t.ticker}`);
-                                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                                 const data = await res.json();
-                                 if (data[t.ticker]) {
-                                   onUpdateInvestment(t.id, 'currentPrice', data[t.ticker]);
-                                 }
-                               } catch (e) {
-                                 console.error("Manual sync failed", e);
-                                }
+                               const data = await fetchPrices([t.ticker]);
+                               if (data[t.ticker]) {
+                                 onUpdateInvestment(t.id, 'currentPrice', data[t.ticker]);
+                               }
                              }}
                              className="text-zinc-500 hover:text-teal-400 p-2 rounded-full hover:bg-teal-500/10 transition-all"
                              title="Manual Sync"

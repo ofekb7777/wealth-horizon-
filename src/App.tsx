@@ -12,7 +12,8 @@ import Home from './components/Home.tsx';
 
 import { useTheme, ThemeProvider } from './context/ThemeContext.tsx';
 import { VersionProvider } from './context/VersionContext.tsx';
-import { repository, initDatabase } from './data';
+import { repository, initDatabase, wipeEverything } from './data';
+import { fetchPrices } from './services/marketData.ts';
 import { AlertTriangle, Loader2, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SpecialBackgroundEffect } from './components/SpecialBackgroundEffect.tsx';
@@ -193,17 +194,9 @@ export default function App() {
       if (!tickers) return;
 
       try {
-        console.log(`[Sync] 30s Pulse Triggered: ${tickers}`);
-        const res = await fetch(`/api/prices?tickers=${encodeURIComponent(tickers)}`);
-        
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error(`[Sync] Server returned error (${res.status}):`, errorText.substring(0, 100));
-          return;
-        }
+        // נכשל בשקט ומחזיר מחירים מוטמנים כשאין רשת.
+        const data = await fetchPrices(tickers.split(','));
 
-        const data = await res.json();
-        
         if (data && typeof data === 'object') {
           setState(prev => {
             let hasChange = false;
@@ -442,18 +435,8 @@ export default function App() {
 
     let currentPrice = 0;
     if (ticker) {
-      try {
-        const res = await fetch(`/api/prices?tickers=${ticker}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (data[ticker]) currentPrice = data[ticker];
-      } catch (e: any) {
-        if (String(e).includes('Failed to fetch') || e?.message === 'Failed to fetch' || e?.message?.includes('Failed to fetch') || e?.name === 'TypeError') {
-          console.warn("Pricing engine offline. Could not fetch initial price for", ticker);
-        } else {
-          console.error("Failed to fetch price for new investment", e);
-        }
-      }
+      const data = await fetchPrices([ticker]);
+      currentPrice = data[ticker] ?? 0;
     }
 
     const newInvestment: Investment = { 
@@ -865,16 +848,14 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
                       ];
                       
                       try {
-                        await repository.saveUserProfile({ 
-                          notes: '', 
-                          patchNotes: state.patchNotes 
-                        });
-
-                        // מוחק את כל 5 הישויות ואז כותב מחדש את חשבונות
-                        // ברירת המחדל. clearAllData מוחק גם רשומות יתומות
-                        // שכבר לא נמצאות ב-state.
-                        await repository.clearAllData();
+                        // מוחק הכל — כולל תזכורות והפרופיל — ואז כותב
+                        // מחדש את חשבונות ברירת המחדל.
+                        await wipeEverything();
                         await repository.saveAccounts(defaultAccounts);
+                        await repository.saveUserProfile({
+                          notes: '',
+                          patchNotes: state.patchNotes,
+                        });
                       } catch (err) {
                         console.error("Error clearing local data:", err);
                       }
@@ -887,6 +868,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
                           investments: [],
                           budgets: [],
                           goals: [],
+                          reminders: [],
                           notes: '',
                           patchNotes: prev.patchNotes
                         };

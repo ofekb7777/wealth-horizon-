@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import RemindersWidget from './RemindersWidget';
+import { getApiKey, setApiKey } from '../services/geminiService';
 
 interface SettingsProps {
   theme: Theme;
@@ -55,6 +56,8 @@ export default function Settings({
 }: SettingsProps) {
   const [activeDropdown, setActiveDropdown] = useState<'theme' | 'effect' | 'currency' | 'backup' | 'reset' | null>(null);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [geminiKey, setGeminiKey] = useState(() => getApiKey());
+  const [keySaved, setKeySaved] = useState(false);
   const [copiedUid, setCopiedUid] = useState(false);
 
   const toggleDropdown = (type: 'theme' | 'effect' | 'currency' | 'backup' | 'reset') => {
@@ -483,6 +486,32 @@ export default function Settings({
               <span className="text-xs font-mono text-zinc-400">europe-west2 (Sandboxed ID)</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="mt-8 glass-card rounded-2xl border border-zinc-500/20 p-5 space-y-3 bg-zinc-900/40">
+        <div>
+          <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">AI Insights Key</h3>
+          <p className="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+            Optional. Paste your own Google Gemini API key to turn on AI insights on the
+            Analytics screen. It is stored on this device only and is sent nowhere but Google.
+            Leave it empty and the feature stays off — nothing else is affected.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="password"
+            value={geminiKey}
+            onChange={(e) => { setGeminiKey(e.target.value); setKeySaved(false); }}
+            placeholder="AIza..."
+            className="flex-1 bg-zinc-950/50 border border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/30 transition-all"
+          />
+          <button
+            onClick={() => { setApiKey(geminiKey); setKeySaved(true); }}
+            className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-zinc-300 hover:bg-white/10 transition-all active:scale-95"
+          >
+            {keySaved ? 'Saved' : 'Save'}
+          </button>
         </div>
       </div>
 

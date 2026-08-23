@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# נוצר אוטומטית ע"י postinstall מתוך node_modules/sql.js
+public/assets/sql-wasm.wasm
