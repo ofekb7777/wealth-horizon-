@@ -705,6 +705,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
         repository.saveAccounts(imported.accounts);
         repository.saveInvestments(imported.investments);
         repository.saveGoals(imported.goals);
+        repository.saveBudgets(imported.budgets || []);
       }
       return {
         ...prev,
