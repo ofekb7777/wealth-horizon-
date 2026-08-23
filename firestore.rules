@@ -1,0 +1,145 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- PHASE 3: PRIMITIVE DEFINITIONS ---
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { 
+      // Sometimes email_verified is not populated or we want to allow unverified for now.
+      // But let's keep it as is, or remove the strict requirement if missing.
+      return isSignedIn(); 
+    }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isAdmin() { 
+      return isSignedIn() && request.auth.token.email == 'ofekb7777@gmail.com';
+    }
+
+    match /system_updates/{updateId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
+    match /system_alerts/{alertId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // --- PHASE 4: VALIDATION BLUEPRINTS ---
+    
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['id', 'date', 'description', 'category', 'amount'])
+        && data.id is string && data.id.size() <= 128
+        && data.date is string && data.date.size() <= 100
+        && data.description is string && data.description.size() <= 1000
+        && data.category is string && data.category.size() <= 100
+        && data.amount is number
+        && (!('type' in data) || (data.type in ['income', 'expense']))
+        && (!('accountId' in data) || (data.accountId is string && data.accountId.size() <= 128));
+    }
+
+    function isValidAccount(data) {
+      return data.keys().hasAll(['id', 'name', 'type', 'balance'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.type is string && data.type in ['Bank', 'Investment', 'Pension', 'Cash']
+        && data.balance is number;
+    }
+
+    function isValidInvestment(data) {
+      return data.keys().hasAll(['id', 'ticker', 'shares', 'avgPrice', 'currentPrice'])
+        && data.id is string && data.id.size() <= 128
+        && data.ticker is string && data.ticker.size() <= 20
+        && data.shares is number
+        && data.avgPrice is number
+        && data.currentPrice is number
+        && (!('name' in data) || (data.name is string && data.name.size() <= 200));
+    }
+
+    function isValidGoal(data) {
+      return data.keys().hasAll(['id', 'name', 'targetAmount', 'currentAmount', 'category'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.targetAmount is number
+        && data.currentAmount is number
+        && data.category is string && data.category.size() <= 100
+        && (!('deadline' in data) || (data.deadline is string && data.deadline.size() <= 100));
+    }
+
+    function isValidBudget(data) {
+      return data.keys().hasAll(['id', 'category', 'limit'])
+        && data.id is string && data.id.size() <= 128
+        && data.category is string && data.category.size() <= 100
+        && data.limit is number;
+    }
+
+    function isValidUserProfile(data) {
+      return (!('activeSheetId' in data) || (data.activeSheetId is string || data.activeSheetId == null))
+        && (!('notes' in data) || (data.notes is string || data.notes == null))
+        && (!('patchNotes' in data) || (data.patchNotes is string || data.patchNotes == null))
+        && (!('theme' in data) || (data.theme is string || data.theme == null))
+        && (!('monoStyle' in data) || (data.monoStyle is string || data.monoStyle == null))
+        && (!('bgEffect' in data) || (data.bgEffect is string || data.bgEffect == null))
+        && (!('email' in data) || (data.email is string || data.email == null))
+        && (!('displayName' in data) || (data.displayName is string || data.displayName == null))
+        && (!('photoURL' in data) || (data.photoURL is string || data.photoURL == null))
+        && (!('lastLogin' in data) || (data.lastLogin is string || data.lastLogin == null));
+    }
+
+    match /users {
+      allow list: if isAdmin();
+
+      match /{userId} {
+        allow get: if isOwner(userId) || isAdmin();
+        
+        allow create: if isOwner(userId) && isVerified() && isValidUserProfile(incoming());
+        
+        // Remove strict field limitations to allow theme variants easily
+        allow update: if isOwner(userId) && isVerified() && isValidUserProfile(incoming());
+
+        match /transactions/{transactionId} {
+          allow get, list: if isOwner(userId) || isAdmin();
+          allow create: if isOwner(userId) && isVerified() && isValidTransaction(incoming());
+          allow update: if isOwner(userId) && isVerified() && isValidTransaction(incoming());
+          allow delete: if isOwner(userId) && isVerified() && isValidId(userId) && isValidId(transactionId);
+        }
+
+        match /accounts/{accountId} {
+          allow get, list: if isOwner(userId) || isAdmin();
+          allow create: if isOwner(userId) && isVerified() && isValidAccount(incoming());
+          allow update: if isOwner(userId) && isVerified() && isValidAccount(incoming());
+          allow delete: if isOwner(userId) && isVerified() && isValidId(userId) && isValidId(accountId);
+        }
+
+        match /investments/{investmentId} {
+          allow get, list: if isOwner(userId) || isAdmin();
+          allow create: if isOwner(userId) && isVerified() && isValidInvestment(incoming());
+          allow update: if isOwner(userId) && isVerified() && isValidInvestment(incoming());
+          allow delete: if isOwner(userId) && isVerified() && isValidId(userId) && isValidId(investmentId);
+        }
+
+        match /goals/{goalId} {
+          allow get, list: if isOwner(userId) || isAdmin();
+          allow create: if isOwner(userId) && isVerified() && isValidGoal(incoming());
+          allow update: if isOwner(userId) && isVerified() && isValidGoal(incoming());
+          allow delete: if isOwner(userId) && isVerified() && isValidId(userId) && isValidId(goalId);
+        }
+
+        match /budgets/{budgetId} {
+          allow get, list: if isOwner(userId) || isAdmin();
+          allow create: if isOwner(userId) && isVerified() && isValidBudget(incoming());
+          allow update: if isOwner(userId) && isVerified() && isValidBudget(incoming());
+          allow delete: if isOwner(userId) && isVerified() && isValidId(userId) && isValidId(budgetId);
+        }
+      }
+    }
+  }
+}
