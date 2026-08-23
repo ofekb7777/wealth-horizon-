@@ -350,6 +350,19 @@ export default function App() {
     return () => clearInterval(interval);
   }, [state.reminders, accessToken, user]);
 
+  /*
+   * כתיבות ל-Repository מול setState
+   * --------------------------------
+   * setState חייב להיות טהור — פונקציית העדכון רצה פעמיים ב-StrictMode.
+   * לכן ברוב ההנדלרים הכתיבה הוצאה החוצה, אחרי קריאת setState.
+   *
+   * בהנדלרים שמחשבים יתרות חשבון מתוך `prev` (עריכת תנועה, מחיקת תנועה,
+   * ושני הייבואים) הכתיבה נשארה בפנים בכוונה: קריאה מ-`prev` היא הדרך
+   * הנכונה לחשב מצב נגזר, ומעבר ל-`state` היה מסכן חישוב יתרות שגוי
+   * בלחיצות מהירות. הנזק מקריאה כפולה מנוטרל בכך שכל כתיבה היא upsert
+   * (ראה Repository.ts) — אותו מזהה, אותו תוכן, אותה תוצאה.
+   */
+
   // --- Transactions ---
   const handleUpdateTransaction = useCallback((id: string, field: keyof Transaction, value: any) => {
     setState(prev => {
@@ -414,27 +427,24 @@ export default function App() {
   }, [user]);
 
   const handleAddTransaction = useCallback((type: 'income' | 'expense') => {
-    setState(prev => {
-      const bankAcc = prev.accounts.find(a => a.id === 'bank-1') || prev.accounts[0];
-      
-      const newTransaction: Transaction = { 
-        id: Math.random().toString(36).substr(2, 9), 
-        date: new Date().toISOString().split('T')[0], 
-        description: '', 
-        category: type === 'income' ? 'Salary' : 'Food', 
-        amount: 0, 
-        type,
-        accountId: bankAcc?.id
-      };
-      
-      if (user) repository.updateTransaction(newTransaction);
+    const bankAcc = state.accounts.find(a => a.id === 'bank-1') || state.accounts[0];
 
-      return {
-        ...prev,
-        transactions: [newTransaction, ...prev.transactions],
-      };
-    });
-  }, [user]);
+    const newTransaction: Transaction = { 
+      id: Math.random().toString(36).substr(2, 9), 
+      date: new Date().toISOString().split('T')[0], 
+      description: '', 
+      category: type === 'income' ? 'Salary' : 'Food', 
+      amount: 0, 
+      type,
+      accountId: bankAcc?.id
+    };
+
+    setState(prev => ({
+      ...prev,
+      transactions: [newTransaction, ...prev.transactions],
+    }));
+    if (user) repository.addTransaction(newTransaction);
+  }, [state.accounts, user]);
 
   const handleDeleteTransaction = useCallback((id: string) => {
     setState(prev => {
@@ -475,18 +485,14 @@ export default function App() {
   }, [user]);
 
   const handleAddAccount = useCallback(() => {
-    setState(prev => {
-      const newAccount: Account = { id: Math.random().toString(36).substr(2, 9), name: '', type: 'Bank', balance: 0 };
-      if (user) repository.updateAccount(newAccount);
-      return { ...prev, accounts: [...prev.accounts, newAccount] };
-    });
+    const newAccount: Account = { id: Math.random().toString(36).substr(2, 9), name: '', type: 'Bank', balance: 0 };
+    setState(prev => ({ ...prev, accounts: [...prev.accounts, newAccount] }));
+    if (user) repository.addAccount(newAccount);
   }, [user]);
 
   const handleDeleteAccount = useCallback((id: string) => {
-    setState(prev => {
-      if (user) repository.deleteAccount(id);
-      return { ...prev, accounts: prev.accounts.filter(t => t.id !== id) };
-    });
+    setState(prev => ({ ...prev, accounts: prev.accounts.filter(t => t.id !== id) }));
+    if (user) repository.deleteAccount(id);
   }, [user]);
 
   // --- Investments ---
@@ -530,26 +536,22 @@ export default function App() {
       }
     }
 
-    setState(prev => {
-      const newInvestment: Investment = { 
-        id: Math.random().toString(36).substr(2, 9), 
-        ticker: ticker || '', 
-        name: name || '',
-        exchange: exchange || '',
-        shares: 0, 
-        avgPrice: 0, 
-        currentPrice: currentPrice || 0 
-      };
-      if (user) repository.updateInvestment(newInvestment);
-      return { ...prev, investments: [...prev.investments, newInvestment] };
-    });
+    const newInvestment: Investment = { 
+      id: Math.random().toString(36).substr(2, 9), 
+      ticker: ticker || '', 
+      name: name || '',
+      exchange: exchange || '',
+      shares: 0, 
+      avgPrice: 0, 
+      currentPrice: currentPrice || 0 
+    };
+    setState(prev => ({ ...prev, investments: [...prev.investments, newInvestment] }));
+    if (user) repository.addInvestment(newInvestment);
   }, [user]);
 
   const handleDeleteInvestment = useCallback((id: string) => {
-    setState(prev => {
-      if (user) repository.deleteInvestment(id);
-      return { ...prev, investments: prev.investments.filter(t => t.id !== id) };
-    });
+    setState(prev => ({ ...prev, investments: prev.investments.filter(t => t.id !== id) }));
+    if (user) repository.deleteInvestment(id);
   }, [user]);
 
 const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any) => {
@@ -564,18 +566,14 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
   }, [user]);
 
   const handleAddGoal = useCallback(() => {
-    setState(prev => {
-      const newGoal: Goal = { id: Math.random().toString(36).substr(2, 9), name: '', targetAmount: 0, currentAmount: 0, category: 'Savings' };
-      if (user) repository.updateGoal(newGoal);
-      return { ...prev, goals: [...prev.goals, newGoal] };
-    });
+    const newGoal: Goal = { id: Math.random().toString(36).substr(2, 9), name: '', targetAmount: 0, currentAmount: 0, category: 'Savings' };
+    setState(prev => ({ ...prev, goals: [...prev.goals, newGoal] }));
+    if (user) repository.addGoal(newGoal);
   }, [user]);
 
   const handleDeleteGoal = useCallback((id: string) => {
-    setState(prev => {
-      if (user) repository.deleteGoal(id);
-      return { ...prev, goals: prev.goals.filter(t => t.id !== id) };
-    });
+    setState(prev => ({ ...prev, goals: prev.goals.filter(t => t.id !== id) }));
+    if (user) repository.deleteGoal(id);
   }, [user]);
 
   const handleUpdateBudget = useCallback((id: string, field: keyof Budget, value: any) => {
@@ -590,61 +588,47 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
   }, [user]);
 
   const handleAddBudget = useCallback((category: string, limit: number) => {
-    setState(prev => {
-      const newBudget: Budget = {
-        id: Math.random().toString(36).substr(2, 9),
-        category,
-        limit
-      };
-      if (user) repository.updateBudget(newBudget);
-      return { ...prev, budgets: [...prev.budgets, newBudget] };
-    });
+    const newBudget: Budget = {
+      id: Math.random().toString(36).substr(2, 9),
+      category,
+      limit
+    };
+    setState(prev => ({ ...prev, budgets: [...prev.budgets, newBudget] }));
+    if (user) repository.addBudget(newBudget);
   }, [user]);
 
   const handleDeleteBudget = useCallback((id: string) => {
-    setState(prev => {
-      if (user) repository.deleteBudget(id);
-      return { ...prev, budgets: prev.budgets.filter(b => b.id !== id) };
-    });
+    setState(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== id) }));
+    if (user) repository.deleteBudget(id);
   }, [user]);
 
   const handleAddReminder = useCallback((subject: string, body: string, scheduledTime: string, recurrence?: 'monthly', dayOfMonth?: number) => {
-    setState(prev => {
-      const newReminder = {
-        id: Math.random().toString(36).substr(2, 9),
-        subject,
-        body,
-        scheduledTime,
-        sent: false,
-        recurrence,
-        dayOfMonth
-      };
-      if (user) repository.updateReminder(newReminder);
-      return { ...prev, reminders: [...(prev.reminders || []), newReminder] };
-    });
+    const newReminder = {
+      id: Math.random().toString(36).substr(2, 9),
+      subject,
+      body,
+      scheduledTime,
+      sent: false,
+      recurrence,
+      dayOfMonth
+    };
+    setState(prev => ({ ...prev, reminders: [...(prev.reminders || []), newReminder] }));
+    if (user) repository.addReminder(newReminder);
   }, [user]);
 
   const handleDeleteReminder = useCallback((id: string) => {
-    setState(prev => {
-      if (user) repository.deleteReminder(id);
-      return { ...prev, reminders: (prev.reminders || []).filter(r => r.id !== id) };
-    });
+    setState(prev => ({ ...prev, reminders: (prev.reminders || []).filter(r => r.id !== id) }));
+    if (user) repository.deleteReminder(id);
   }, [user]);
 
   const handleUpdateNotes = useCallback((notes: string) => {
-    setState(prev => {
-      if (user) repository.saveUserProfile({ notes });
-      return { ...prev, notes };
-    });
+    setState(prev => ({ ...prev, notes }));
+    if (user) repository.saveUserProfile({ notes });
   }, [user]);
 
   const handleUpdatePatchNotes = useCallback((patchNotes: string) => {
-    setState(prev => {
-      if (user) {
-        repository.saveUserProfile({ patchNotes });
-      }
-      return { ...prev, patchNotes };
-    });
+    setState(prev => ({ ...prev, patchNotes }));
+    if (user) repository.saveUserProfile({ patchNotes });
   }, [user]);
 
   const handleBroadcastUpdate = useCallback(async (message: string) => {
