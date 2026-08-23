@@ -21,3 +21,4 @@ android/app/src/main/assets/capacitor.config.json
 android/capacitor-cordova-android-plugins/
 *.apk
 *.aab
+.test-build/

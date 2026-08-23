@@ -16,6 +16,7 @@ import { repository, initDatabase, wipeEverything } from './data';
 import { fetchPrices } from './services/marketData.ts';
 import { initStatusBar, hideSplashScreen, onAndroidBack } from './native';
 import { txt } from './i18n/he';
+import { publishSnapshot } from './widget';
 import { AlertTriangle, Loader2, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SpecialBackgroundEffect } from './components/SpecialBackgroundEffect.tsx';
@@ -122,6 +123,12 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('financial_state', JSON.stringify(state));
   }, [state]);
+
+  // מפרסם את המצב לווידג'ט שעל מסך הבית. אותה תלות בדיוק כמו הגיבוי
+  // ל-localStorage: כל שינוי בנתונים מגיע לשניהם.
+  useEffect(() => {
+    if (dbReady) publishSnapshot(state, currency);
+  }, [state, currency, dbReady]);
 
   useEffect(() => {
     localStorage.setItem('currency_preference', currency);
