@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  מונע מאנדרואיד לגבות את נתוני האפליקציה ל-Google Drive או להעביר
+  אותם למכשיר חדש.
+
+  זו החלטה מכוונת: הדרישה בבריף היא אפס תלות בענן, ומסד הנתונים כאן
+  מכיל את כל הנתונים הפיננסיים. גיבוי אוטומטי היה שולח אותם ל-Google
+  בלי שהמשתמש ביקש.
+
+  הגיבוי היחיד הוא ייצוא JSON ידני ממסך ההגדרות.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="file" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="file" />
+    </device-transfer>
+</data-extraction-rules>
