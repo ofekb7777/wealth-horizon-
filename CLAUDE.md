@@ -48,7 +48,8 @@ src/
 ├── App.tsx                  ליבה: state גלובלי + ניתוב + כל ה-CRUD handlers
 ├── main.tsx                 נקודת כניסה, שרשור ה-Providers
 ├── types.ts                 מודל הנתונים + קטגוריות + מטבעות
-├── index.css                Tailwind + ערכות נושא (default/amber/teal/indigo/mono)
+├── index.css                Tailwind + 8 ערכות נושא
+│                            (default/mono/forest/sunset/lavender/crimson/gold/royal)
 ├── components/
 │   ├── Home.tsx             מסך בית — סיכום, patch notes, תזכורות, ייבוא state
 │   ├── Dashboard.tsx        אנליטיקה + יעדים + תובנות AI
@@ -56,19 +57,24 @@ src/
 │   ├── Accounts.tsx         CRUD חשבונות
 │   ├── Investments.tsx      תיק השקעות, חיפוש טיקרים, גרפים
 │   ├── Budgets.tsx          תקציבים לפי קטגוריה
-│   ├── Settings.tsx         הגדרות + ייצוא state ל-JSON (שורה 81)
+│   ├── Settings.tsx         הגדרות + ייצוא state ל-JSON
 │   ├── AdminConsole.tsx     פאנל אדמין — רואה נתוני כל המשתמשים
 │   ├── Login.tsx            Google Sign-In
 │   ├── Sidebar.tsx / BottomNav.tsx / MobileTopBar.tsx    ניווט
 │   ├── RemindersWidget.tsx  תזכורות שנשלחות במייל
 │   ├── SpecialBackgroundEffect.tsx   אפקטי רקע
 │   └── InstallModal.tsx     הנחיות התקנת PWA
+├── data/                    ⭐ שכבת הנתונים (שלב 1)
+│   ├── types.ts             טיפוסי הישויות — מקור האמת
+│   ├── Repository.ts        ה-interface: החוזה שכל מימוש חייב לספק
+│   ├── FirebaseRepository.ts  המימוש הנוכחי — הקובץ היחיד עם firebase/firestore
+│   ├── cloud.ts             פיצ'רים שהם ענן במהותם (הודעות, משוב, אדמין)
+│   └── index.ts             נקודת החיבור — כאן משנים שורה אחת בשלב 2
 ├── context/
-│   ├── AuthContext.tsx      Google auth + בדיקת אדמין (רשימת מיילים בקוד, שורה 45)
-│   ├── ThemeContext.tsx     ערכת נושא — ⚠️ ניגש ל-Firestore ישירות, עוקף את השירות
+│   ├── AuthContext.tsx      Google auth + בדיקת אדמין (רשימת מיילים בקוד)
+│   ├── ThemeContext.tsx     ערכת נושא — עובר דרך ה-Repository
 │   └── VersionContext.tsx   גרסת אפליקציה
 ├── services/
-│   ├── firestoreService.ts  25 פונקציות CRUD — כל הגישה לנתונים
 │   ├── geminiService.ts     תובנות AI דרך פרוקסי /api/gemini
 │   └── gmailService.ts      שליחת מייל לתזכורות
 └── lib/
@@ -78,10 +84,14 @@ src/
 
 **7 מסכים** (`INITIAL_SHEETS`, App.tsx:26-34): Home · Accounts · Analytics · Income · Expenses · Budgets · Investments
 
-**זרימת נתונים כיום:** `App.tsx` → `services/firestoreService.ts` → `lib/firebase.ts` → Firestore.
-בנוסף `App.tsx:196` שומר עותק גיבוי של כל ה-state ב-`localStorage`.
+**זרימת נתונים כיום (אחרי שלב 1):**
+`App.tsx` → `data/index.ts` → `Repository` (interface) → `FirebaseRepository` → Firestore.
+בנוסף `App.tsx` שומר עותק גיבוי של כל ה-state ב-`localStorage`.
 
-**זרימת נתונים אחרי שלב 2:** `App.tsx` → `Repository` interface → `SqliteRepository` → SQLite מקומי.
+**אחרי שלב 2:** אותה שרשרת בדיוק, רק ש-`data/index.ts` יחזיר `SqliteRepository`.
+**אף קומפוננטה לא מייבאת `firebase`.** רק 4 קבצים עושים זאת:
+`lib/firebase.ts` (אתחול), `context/AuthContext.tsx` (auth בלבד),
+`data/FirebaseRepository.ts` ו-`data/cloud.ts`.
 
 ---
 
@@ -133,14 +143,24 @@ src/
 `firestore.rules` **אין בו כלל** ל-`users/{uid}/reminders` ולא ל-`feedback`, ואילו
 `firestoreService.ts:204-222, 370-393` כותב לשניהם. הכלל הראשון בקובץ
 (`match /{document=**} { allow read, write: if false }`) חוסם אותם.
-`handleFirestoreError` רק מדפיס ל-console → **הכישלון שקט**. כל תזכורת נראית שנשמרה ונעלמת ברענון.
+`handleFirestoreError` (`lib/firestore-utils.ts:48`) מדפיס ל-console **וזורק מחדש**.
+מכיוון שהקריאות ב-`App.tsx` לא מחכות ב-`await` ואין להן `.catch`, התוצאה היא
+unhandled promise rejection: המשתמש לא רואה כלום, התזכורת נראית שנשמרה, ונעלמת ברענון.
 **לא מתקנים** — נעלם מעצמו בשלב 2 עם המעבר ל-SQLite.
 
-### 🔴 2. כתיבות לבסיס הנתונים בתוך `setState`
-~45 קריאות ל-Firestore מפוזרות ב-`App.tsx`, רובן **בתוך פונקציות עדכון של `setState`**
-(400-402, 450-451, 495 ועוד) — פונקציות שחייבות להיות טהורות. ב-React 19 StrictMode
-הן רצות פעמיים בפיתוח → **כתיבה כפולה**. בנוסף כל עריכת תנועה כותבת מחדש את *כל* החשבונות
-(שורה 402). זו ההצדקה לשלב 1.
+> תוקן ב-2026-08-23: בשלב 0 כתבתי כאן ש-`handleFirestoreError` "רק מדפיס ל-console".
+> זה לא נכון — הוא זורק. האפקט שהמשתמש חווה זהה, המנגנון שונה.
+
+### 🟡 2. כתיבות בתוך `setState` — טופל חלקית בשלב 1
+**היה:** ~45 קריאות ל-Firestore מפוזרות ב-`App.tsx`, רובן בתוך פונקציות עדכון של
+`setState` — פונקציות שחייבות להיות טהורות. ב-React 19 StrictMode הן רצות פעמיים → כתיבה כפולה.
+
+**עכשיו:** כל הגישה עוברת דרך ה-Repository, וכל כתיבה היא **upsert** — ולכן קריאה
+כפולה כבר לא מזיקה. 15 כתיבות עדיין יושבות בתוך updaters, כולן בהנדלרים שמחשבים
+מצב נגזר מ-`prev` (יתרות חשבון, עריכת שדה). ההערה ב-`App.tsx` מסבירה למה.
+
+**מה שנשאר:** כל עריכת תנועה עדיין כותבת מחדש את *כל* החשבונות. נפתר בשלב 2,
+שם עדכון יתרה הוא `UPDATE` ממוקד ולא כתיבה מחדש של אוסף.
 
 ### 🟠 3. האפליקציה כולה באנגלית, LTR
 אפס תווים עבריים ב-`src/`. `index.html` הוא `<html lang="en">` בלי `dir` בכלל.
