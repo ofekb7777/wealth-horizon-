@@ -9,3 +9,4 @@ coverage/
 
 # נוצר אוטומטית ע"י postinstall מתוך node_modules/sql.js
 public/assets/sql-wasm.wasm
+dev-dist/
