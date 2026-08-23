@@ -2,49 +2,12 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
-import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
     plugins: [
-      react(), 
+      react(),
       tailwindcss(),
-      VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
-        manifest: {
-          name: 'Wealth Horizon Terminal',
-          short_name: 'WealthHorizon',
-          description: 'Secure Financial Intelligence Layer',
-          theme_color: '#09090b',
-          background_color: '#09090b',
-          display: 'standalone',
-          icons: [
-            {
-              "src": "https://cdn-icons-png.flaticon.com/512/3135/3135706.png",
-              "sizes": "192x192",
-              "type": "image/png",
-              "purpose": "any"
-            },
-            {
-              "src": "https://cdn-icons-png.flaticon.com/512/3135/3135706.png",
-              "sizes": "512x512",
-              "type": "image/png",
-              "purpose": "any"
-            },
-            {
-              "src": "https://cdn-icons-png.flaticon.com/512/3135/3135706.png",
-              "sizes": "192x192",
-              "type": "image/png",
-              "purpose": "maskable"
-            }
-          ]
-        },
-        devOptions: {
-          enabled: true,
-          type: 'module'
-        }
-      })
     ],
     resolve: {
       alias: {
@@ -52,8 +15,6 @@ export default defineConfig(() => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };

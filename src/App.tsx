@@ -14,12 +14,12 @@ import { useTheme, ThemeProvider } from './context/ThemeContext.tsx';
 import { VersionProvider } from './context/VersionContext.tsx';
 import { repository, initDatabase, wipeEverything } from './data';
 import { fetchPrices } from './services/marketData.ts';
+import { initStatusBar, hideSplashScreen, onAndroidBack } from './native';
 import { AlertTriangle, Loader2, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SpecialBackgroundEffect } from './components/SpecialBackgroundEffect.tsx';
 import Settings from './components/Settings.tsx';
 
-import InstallModal from './components/InstallModal.tsx';
 
 const INITIAL_SHEETS: Sheet[] = [
   { id: '0', name: 'Home', icon: 'home', type: 'home' },
@@ -61,41 +61,21 @@ export default function App() {
   });
   // ... (the entire App contents remain here)
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showInstallModal, setShowInstallModal] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(true);
-
-  useEffect(() => {
-    const checkStandalone = () => {
-      const isWindowStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      // @ts-ignore
-      const isIOSStandalone = window.navigator.standalone === true;
-      const standalone = isWindowStandalone || isIOSStandalone;
-      setIsStandalone(standalone);
-      
-      if (!standalone && !sessionStorage.getItem('installPromptShown')) {
-        setTimeout(() => {
-          setShowInstallModal(true);
-          sessionStorage.setItem('installPromptShown', 'true');
-        }, 1500);
-      }
-    };
-    checkStandalone();
-    
-    const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    mediaQuery.addEventListener('change', checkStandalone);
-    return () => mediaQuery.removeEventListener('change', checkStandalone);
-  }, []);
   const sheets: Sheet[] = INITIAL_SHEETS;
 
   // פותח את מסד הנתונים פעם אחת בעלייה. עד שזה מסתיים מוצג מסך טעינה.
   useEffect(() => {
+    initStatusBar();
     initDatabase()
       .then(() => setDbReady(true))
       .catch((e: unknown) => {
         console.error('Failed to open the local database', e);
         setDbError(e instanceof Error ? e.message : String(e));
-      });
+      })
+      // מסך הפתיחה יורד בין אם הצלחנו ובין אם לא — אחרת מסך השגיאה
+      // היה מוסתר מאחוריו והמשתמש היה רואה לוגו תקוע.
+      .finally(hideSplashScreen);
   }, []);
 
   // טעינת כל הנתונים מהמסד המקומי, פעם אחת אחרי שהוא נפתח.
@@ -564,51 +544,37 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
     }
   }, []);
 
-  const mainScrollRef = useRef<HTMLElement>(null);
-
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  /*
+   * כפתור "חזור" של אנדרואיד.
+   *
+   * ברירת המחדל של WebView היא לסגור את האפליקציה בלחיצה אחת, וזה
+   * מרגיש שבור. במקום זה: סוגר מודל פתוח, אחרת חוזר למסך הבית, ורק
+   * מהבית מעביר את האפליקציה לרקע (לא סוגר אותה).
+   *
+   * ה-ref קיים כי המאזין נרשם פעם אחת, ובלעדיו הוא היה רואה לנצח
+   * את המצב מהרינדור הראשון.
+   */
+  const backStateRef = useRef({ activeSheetId: state.activeSheetId, showSettingsModal });
+  backStateRef.current = { activeSheetId: state.activeSheetId, showSettingsModal };
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then((registration) => {
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-      }, (err) => {
-        console.log('ServiceWorker registration failed: ', err);
-      });
-    }
+    return onAndroidBack(() => {
+      const current = backStateRef.current;
 
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      console.log('Install prompt captured');
-      
-      if (!sessionStorage.getItem('installPromptShown')) {
-        setShowInstallModal(true);
-        sessionStorage.setItem('installPromptShown', 'true');
+      if (current.showSettingsModal) {
+        setShowSettingsModal(false);
+        return true;
       }
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
+      if (current.activeSheetId !== '0') {
+        setState(prev => ({ ...prev, activeSheetId: '0' }));
+        repository.saveUserProfile({ activeSheetId: '0' });
+        return true;
+      }
+      return false; // מהבית — לרקע
+    });
   }, []);
 
-  const handleInstallApp = async () => {
-    console.log("Install button clicked, deferredPrompt:", deferredPrompt);
-    if (!deferredPrompt) {
-      setShowInstallModal(true);
-      return;
-    }
-    console.log("Calling deferredPrompt.prompt()");
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log("Prompt outcome:", outcome);
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-    }
-  };
+  const mainScrollRef = useRef<HTMLElement>(null);
 
   if (dbError) {
     return (
@@ -644,7 +610,6 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
           }}
           currency={currency}
           onShowSettings={() => setShowSettingsModal(true)}
-          onInstall={handleInstallApp}
         />
 
       <div className="flex flex-col flex-1 min-w-0">
@@ -674,9 +639,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
                 onUpdatePatchNotes={handleUpdatePatchNotes}
                 onImportState={handleImportState}
                 onNavigate={navigateToSheet} 
-                onInstall={handleInstallApp}
-                showInstallButton={true}
-                onAddReminder={handleAddReminder}
+                      onAddReminder={handleAddReminder}
                 onDeleteReminder={handleDeleteReminder}
               />
             )}
@@ -761,14 +724,9 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
             setState(prev => ({ ...prev, activeSheetId: id }));
             repository.saveUserProfile({ activeSheetId: id });
           }}
+          onShowSettings={() => setShowSettingsModal(true)}
         />
       </div>
-
-      <AnimatePresence>
-        {showInstallModal && (
-          <InstallModal onClose={() => setShowInstallModal(false)} />
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {showSettingsModal && (

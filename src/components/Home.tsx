@@ -14,8 +14,6 @@ interface HomeProps {
   patchNotes: string;
   onUpdatePatchNotes: (notes: string) => void;
   onImportState: (state: SpreadsheetState) => void;
-  onInstall?: () => void;
-  showInstallButton?: boolean;
   onAddReminder?: (subject: string, body: string, time: string) => void;
   onDeleteReminder?: (id: string) => void;
 }
@@ -27,8 +25,6 @@ export default function Home({
   patchNotes, 
   onUpdatePatchNotes, 
   onImportState, 
-  onInstall,
-  showInstallButton,
   onAddReminder,
   onDeleteReminder,
 }: HomeProps) {

@@ -10,10 +10,9 @@ interface SidebarProps {
   onSelectSheet: (id: string) => void;
   currency: any;
   onShowSettings: () => void;
-  onInstall: () => void;
 }
 
-export default function Sidebar({ sheets, activeSheetId, onSelectSheet, onShowSettings, onInstall }: SidebarProps) {
+export default function Sidebar({ sheets, activeSheetId, onSelectSheet, onShowSettings }: SidebarProps) {
   const { theme, setTheme } = useTheme();
 
   const getIcon = (iconName: string) => {
@@ -89,14 +88,6 @@ export default function Sidebar({ sheets, activeSheetId, onSelectSheet, onShowSe
         >
           <Settings className="h-4 w-4" />
           Settings
-        </button>
-
-        <button
-          onClick={onInstall}
-          className="w-full flex items-center gap-3 px-3 py-2 text-pink-400 hover:bg-pink-500/5 rounded-xl transition-all text-xs font-black uppercase tracking-widest italic"
-        >
-          <LayoutGrid className="h-4 w-4" />
-          Install App
         </button>
 
       </div>

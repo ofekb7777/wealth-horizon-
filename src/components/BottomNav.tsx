@@ -1,16 +1,14 @@
-import { LayoutGrid, TrendingDown, TrendingUp, Wallet, LineChart, Home as HomeIcon, Shield, PieChart, Settings } from 'lucide-react';
+import { LayoutGrid, TrendingDown, TrendingUp, Wallet, LineChart, Home as HomeIcon, PieChart, Settings } from 'lucide-react';
 import { Sheet } from '../types';
 
 interface BottomNavProps {
   sheets: Sheet[];
   activeSheetId: string;
   onSelectSheet: (id: string) => void;
-  isAdmin?: boolean;
-  onShowAdmin?: () => void;
-  onShowSettings?: () => void;
+  onShowSettings: () => void;
 }
 
-export default function BottomNav({ sheets, activeSheetId, onSelectSheet, isAdmin, onShowAdmin, onShowSettings }: BottomNavProps) {
+export default function BottomNav({ sheets, activeSheetId, onSelectSheet, onShowSettings }: BottomNavProps) {
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case 'home': return <HomeIcon className="h-5 w-5" />;
@@ -50,9 +48,8 @@ export default function BottomNav({ sheets, activeSheetId, onSelectSheet, isAdmi
             </button>
           );
         })}
-        {onShowAdmin && (
-          <button
-            onClick={onShowAdmin}
+        <button
+            onClick={onShowSettings}
             className="flex flex-col items-center justify-center min-w-[70px] h-14 p-1 snap-center rounded-2xl transition-all duration-300 outline-none text-zinc-400 hover:text-pink-400">
              <div className="flex items-center justify-center rounded-xl p-2 mb-1 transition-all duration-300">
                 <Settings className="h-5 w-5" />
@@ -61,7 +58,6 @@ export default function BottomNav({ sheets, activeSheetId, onSelectSheet, isAdmi
                Settings
              </span>
           </button>
-        )}
       </div>
     </div>
   );
