@@ -206,7 +206,7 @@ export default function Investments({
                   placeholder="IDENTIFY TICKER..."
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full bg-transparent border-b-2 border-white/5 py-3 md:py-6 pl-10 md:pl-14 text-xl md:text-4xl font-black text-zinc-100 placeholder:text-zinc-800 outline-none transition-all uppercase tracking-tighter focus:border-pink-500/50 italic"
+                  className="w-full bg-transparent border-b-2 border-white/5 py-3 md:py-6 ps-10 md:ps-14 text-xl md:text-4xl font-black text-zinc-100 placeholder:text-zinc-800 outline-none transition-all uppercase tracking-tighter focus:border-pink-500/50 italic"
                 />
                 <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-4">
                   {isSearching && (
@@ -232,7 +232,7 @@ export default function Investments({
                           setTickerResults([]);
                           setSearchQuery('');
                         }}
-                        className="w-full flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-teal-400/40 hover:bg-zinc-800/80 transition-all text-left group"
+                        className="w-full flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-teal-400/40 hover:bg-zinc-800/80 transition-all text-start group"
                       >
                         <div className="flex flex-col min-w-0">
                           <span className="font-black text-lg text-zinc-100 group-hover:text-teal-400 truncate">{t.symbol}</span>
@@ -270,7 +270,7 @@ export default function Investments({
                              onAddInvestment(item.s);
                              setIsModalOpen(false);
                            }}
-                           className="group p-4 bg-white/[0.02] border border-white/10 rounded-2xl text-left hover:border-teal-400/40 hover:bg-teal-400/5 transition-all"
+                           className="group p-4 bg-white/[0.02] border border-white/10 rounded-2xl text-start hover:border-teal-400/40 hover:bg-teal-400/5 transition-all"
                          >
                            <div className="text-sm font-black text-zinc-100 group-hover:text-teal-400">{item.s}</div>
                            <div className="text-[9px] font-medium text-zinc-500 mt-0.5 line-clamp-1">{item.n}</div>
@@ -353,7 +353,7 @@ export default function Investments({
           <div key={t.id} className="glass-card rounded-[2rem] p-5 sm:p-6 md:p-8 shadow-2xl relative group overflow-visible transition-all duration-200 border border-white/5 hover:border-white/10">
             <button
                onClick={() => onDeleteInvestment(t.id)}
-               className="absolute -top-3 -right-3 z-50 text-zinc-400 hover:text-rose-400 p-3 rounded-full bg-zinc-900 border border-white/10 shadow-2xl transition-all opacity-0 group-hover:opacity-100 active:scale-95"
+               className="absolute -top-3 -end-3 z-50 text-zinc-400 hover:text-rose-400 p-3 rounded-full bg-zinc-900 border border-white/10 shadow-2xl transition-all opacity-0 group-hover:opacity-100 active:scale-95"
                title="Remove Investment"
             >
               <Trash2 className="h-5 w-5" />

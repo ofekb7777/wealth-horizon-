@@ -15,6 +15,7 @@ import { VersionProvider } from './context/VersionContext.tsx';
 import { repository, initDatabase, wipeEverything } from './data';
 import { fetchPrices } from './services/marketData.ts';
 import { initStatusBar, hideSplashScreen, onAndroidBack } from './native';
+import { txt } from './i18n/he';
 import { AlertTriangle, Loader2, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SpecialBackgroundEffect } from './components/SpecialBackgroundEffect.tsx';
@@ -22,13 +23,13 @@ import Settings from './components/Settings.tsx';
 
 
 const INITIAL_SHEETS: Sheet[] = [
-  { id: '0', name: 'Home', icon: 'home', type: 'home' },
-  { id: '3', name: 'Accounts', icon: 'wallet', type: 'accounts' },
-  { id: '5', name: 'Analytics', icon: 'dashboard', type: 'dashboard' },
-  { id: '1', name: 'Income', icon: 'trending-up', type: 'income' },
-  { id: '2', name: 'Expenses', icon: 'trending-down', type: 'expenses' },
-  { id: '6', name: 'Budgets', icon: 'pie-chart', type: 'budget' },
-  { id: '4', name: 'Investments', icon: 'investments', type: 'investments' },
+  { id: '0', name: txt.screens.home, icon: 'home', type: 'home' },
+  { id: '3', name: txt.screens.accounts, icon: 'wallet', type: 'accounts' },
+  { id: '5', name: txt.screens.analytics, icon: 'dashboard', type: 'dashboard' },
+  { id: '1', name: txt.screens.income, icon: 'trending-up', type: 'income' },
+  { id: '2', name: txt.screens.expenses, icon: 'trending-down', type: 'expenses' },
+  { id: '6', name: txt.screens.budgets, icon: 'pie-chart', type: 'budget' },
+  { id: '4', name: txt.screens.investments, icon: 'investments', type: 'investments' },
 ];
 
 const INITIAL_TRANSACTIONS: Transaction[] = [];
@@ -57,7 +58,7 @@ export default function App() {
     budgets: [],
     activeSheetId: '0',
     notes: '',
-    patchNotes: 'Wealth Horizon Terminal initialized. Secure uplink established.',
+    patchNotes: 'ברוך הבא. כל הנתונים שלך נשמרים על המכשיר הזה בלבד.',
   });
   // ... (the entire App contents remain here)
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -580,11 +581,9 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 gap-4 p-8 text-center">
         <AlertTriangle className="w-12 h-12 text-rose-500" />
-        <p className="horizon-title text-sm text-zinc-300 tracking-[0.2em]">Local database failed to open</p>
-        <p className="text-xs text-zinc-500 font-mono max-w-md break-words">{dbError}</p>
-        <p className="text-[10px] text-zinc-600 max-w-md">
-          Your data is still on this device. Reloading the app usually clears this.
-        </p>
+        <p className="horizon-title text-sm text-zinc-300 tracking-[0.2em]">{txt.boot.failedTitle}</p>
+        <p className="text-xs text-zinc-500 font-mono max-w-md break-words" dir="ltr">{dbError}</p>
+        <p className="text-[10px] text-zinc-600 max-w-md">{txt.boot.failedHint}</p>
       </div>
     );
   }
@@ -593,7 +592,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 gap-4">
         <Loader2 className="w-12 h-12 text-pink-500 animate-spin" />
-        <p className="horizon-title text-xs text-zinc-500 tracking-[0.2em] opacity-50">Opening local database...</p>
+        <p className="horizon-title text-xs text-zinc-500 tracking-[0.2em] opacity-50">{txt.boot.opening}</p>
       </div>
     );
   }
@@ -619,7 +618,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
 
         <div className="hidden md:flex h-16 bg-zinc-900/50 backdrop-blur-md border-b border-white/5 items-center justify-between px-8 shrink-0 z-10 relative">
           <div className="flex items-center gap-3">
-            <h1 className="horizon-title text-xl text-zinc-100 border-l-2 border-pink-500 pl-4">
+            <h1 className="horizon-title text-xl text-zinc-100 border-s-2 border-pink-500 ps-4">
               {activeSheet ? activeSheet.name : "Wealth Horizon"}
             </h1>
             <div className="h-1 w-8 rounded-full bg-gradient-to-r from-pink-500/40 to-transparent" />
@@ -745,10 +744,10 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
               className="relative w-full max-w-7xl h-full max-h-[90vh] glass-card rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col bg-zinc-900/50"
             >
               <div className="px-12 pt-8 border-b border-white/5 pb-4 shrink-0">
-                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">Settings</h2>
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">{txt.settings.title}</h2>
               </div>
 
-              <div className="absolute top-6 right-6 z-10 flex items-center gap-2">
+              <div className="absolute top-6 end-6 z-10 flex items-center gap-2">
                 <button 
                   onClick={() => setShowSettingsModal(false)}
                   className="p-3 rounded-2xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all pointer-events-auto"
@@ -773,8 +772,8 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
                     onDeleteReminder={handleDeleteReminder}
                     onResetData={async () => {
                       const defaultAccounts: Account[] = [
-                        { id: 'bank-1', name: 'Main Checking', type: 'Bank', balance: 0 },
-                        { id: 'inv-1', name: 'Investment Account', type: 'Investment', balance: 0 }
+                        { id: 'bank-1', name: 'עובר ושב', type: 'Bank', balance: 0 },
+                        { id: 'inv-1', name: 'חשבון השקעות', type: 'Investment', balance: 0 }
                       ];
                       
                       try {

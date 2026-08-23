@@ -43,8 +43,8 @@ export default function Sidebar({ sheets, activeSheetId, onSelectSheet, onShowSe
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                 className="flex items-center gap-0.5"
               >
-                <div className="w-6 h-3 bg-gradient-to-br from-pink-600 via-pink-700 to-orange-500 rounded-l-full rounded-tr-md border border-white/20 shadow-md shadow-pink-500/40" />
-                <div className="w-6 h-3 bg-gradient-to-bl from-pink-600 via-pink-700 to-orange-500 rounded-r-full rounded-tl-md border border-white/20 shadow-md shadow-pink-500/40" />
+                <div className="w-6 h-3 bg-gradient-to-br from-pink-600 via-pink-700 to-orange-500 rounded-s-full rounded-tr-md border border-white/20 shadow-md shadow-pink-500/40" />
+                <div className="w-6 h-3 bg-gradient-to-bl from-pink-600 via-pink-700 to-orange-500 rounded-e-full rounded-tl-md border border-white/20 shadow-md shadow-pink-500/40" />
               </motion.div>
             </div>
 

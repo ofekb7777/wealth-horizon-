@@ -270,7 +270,7 @@ export default function Home({
                {hoveredNet ? 'SNAPSHOT' : 'TOTAL VALUE'}
             </div>
           </div>
-          <div className="flex-1 min-h-[150px] -ml-4">
+          <div className="flex-1 min-h-[150px] -ms-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart 
                 data={summaryData.trendData}
@@ -332,7 +332,7 @@ export default function Home({
               </div>
             )}
           </div>
-          <div className="flex-1 min-h-[150px] -ml-4">
+          <div className="flex-1 min-h-[150px] -ms-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={summaryData.monthlyChartData} 

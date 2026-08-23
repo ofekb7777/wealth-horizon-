@@ -161,7 +161,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                 <Activity className="h-3 w-3 text-pink-500 animate-pulse" />
                 <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none italic">Live Protocol</span>
               </div>
-              <div className="flex gap-6 border-l border-white/5 pl-6">
+              <div className="flex gap-6 border-s border-white/5 ps-6">
                 {(investments || []).slice(0, 3).map(inv => (
                    <div 
                       key={inv.id} 
@@ -243,7 +243,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                     <span className="text-[10px] uppercase font-black tracking-[0.3em]">Capital Velocity</span>
                   </div>
                   <div className="p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 bg-zinc-900/40 backdrop-blur-3xl h-auto md:h-[240px] flex flex-col justify-center relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 w-48 h-48 bg-pink-500/10 blur-[80px] rounded-full -mr-20 -mt-20 group-hover:bg-pink-500/20 transition-all duration-700" />
+                     <div className="absolute top-0 right-0 w-48 h-48 bg-pink-500/10 blur-[80px] rounded-full -me-20 -mt-20 group-hover:bg-pink-500/20 transition-all duration-700" />
                      <div className="text-[10px] uppercase font-black tracking-[0.4em] text-zinc-500 mb-2 md:mb-4">Cumulative Liquidity</div>
                      <div className="text-4xl md:text-6xl font-black text-zinc-100 font-mono tracking-tighter mb-4 md:mb-8 leading-none italic">
                        {summaryData.totalNetWorth > 0 ? '+' : ''}{symbol}{(summaryData.totalNetWorth * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -334,7 +334,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                 <div className="group glass-card rounded-[2.5rem] p-8 flex flex-col h-[400px] border-white/5 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-8 z-10">
                      {hoveredAllocation ? (
-                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-right">
+                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-end">
                          <div className="text-[10px] font-black text-teal-400 uppercase tracking-widest">{hoveredAllocation.name}</div>
                          <div className="text-sm font-black font-mono text-zinc-100">{symbol}{(hoveredAllocation.value * rate).toLocaleString()}</div>
                        </motion.div>
@@ -381,7 +381,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                 </div>
 
                 <div className="group glass-card rounded-[2.5rem] p-8 flex flex-col h-[400px] border-white/5 relative overflow-hidden">
-                   <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4 pr-1">
+                   <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4 pe-1">
                       <h3 className="text-xs uppercase font-black tracking-[0.3em] text-zinc-500">Variable Expenditures</h3>
                       {hoveredExpense && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
@@ -595,7 +595,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                   <div key={goal.id} className="group glass-card rounded-[2.5rem] p-8 relative overflow-hidden transition-all duration-300 hover:bg-zinc-900/60">
                     <button
                       onClick={() => onDeleteGoal(goal.id)}
-                      className="absolute top-6 right-6 p-2 text-zinc-600 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute top-6 end-6 p-2 text-zinc-600 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -615,7 +615,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                         <div className="flex flex-col gap-1 flex-1 w-full">
                           <div className="text-[9px] text-zinc-600 uppercase font-black tracking-[0.2em]">Position</div>
                           <div className="flex items-center text-2xl font-black font-mono text-zinc-100 relative w-full">
-                            <span className="mr-1">{symbol}</span>
+                            <span className="me-1">{symbol}</span>
                             <div className="relative flex-1">
                               <input
                                 type="number"
@@ -630,17 +630,17 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                             </div>
                           </div>
                         </div>
-                        <div className="flex flex-col gap-1 flex-1 w-full md:text-right">
+                        <div className="flex flex-col gap-1 flex-1 w-full md:text-end">
                           <div className="text-[9px] text-zinc-600 uppercase font-black tracking-[0.2em]">Target</div>
                           <div className="flex items-center justify-start md:justify-end text-2xl font-black font-mono text-zinc-500 relative w-full">
-                             <span className="mr-1">{symbol}</span>
+                             <span className="me-1">{symbol}</span>
                              <div className="relative flex-1 md:flex-none md:min-w-[150px]">
                                <input
                                 type="number"
                                 value={goal.targetAmount === 0 ? '' : Number((goal.targetAmount * rate).toFixed(2)).toString()}
                                 onChange={(e) => onUpdateGoal(goal.id, 'targetAmount', (parseFloat(e.target.value) || 0) / rate)}
                                 onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                                className="bg-transparent w-full outline-none border-b-2 border-transparent focus:border-teal-500/20 md:text-right transition-all peer focus:opacity-100 opacity-0"
+                                className="bg-transparent w-full outline-none border-b-2 border-transparent focus:border-teal-500/20 md:text-end transition-all peer focus:opacity-100 opacity-0"
                               />
                               <div className="absolute inset-0 pointer-events-none peer-focus:hidden flex items-center justify-start md:justify-end truncate">
                                 {(goal.targetAmount * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

@@ -135,7 +135,7 @@ export default function Settings({
           </div>
           <h1 className="text-3xl font-black text-zinc-100 uppercase tracking-tighter italic">Settings Console</h1>
         </div>
-        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest ml-12">
+        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest ms-12">
           Configure Preferences & Control Dashboard Nodes
         </p>
       </div>
@@ -174,9 +174,9 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-left cursor-default"
+                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-start cursor-default"
               >
-                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1 mb-1 border-b border-white/5 pb-1">Select Visual Scheme</h4>
+                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ps-1 mb-1 border-b border-white/5 pb-1">Select Visual Scheme</h4>
                 <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-hide font-display">
                   {themesList.map((t) => (
                     <button
@@ -243,9 +243,9 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-left cursor-default space-y-2"
+                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-start cursor-default space-y-2"
               >
-                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1 mb-1 border-b border-white/5 pb-1">Ambient Atmosphere</h4>
+                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ps-1 mb-1 border-b border-white/5 pb-1">Ambient Atmosphere</h4>
                 <div className="space-y-1">
                   {ambientEffects.map((ae) => (
                     <button
@@ -254,7 +254,7 @@ export default function Settings({
                         onSetBgEffect(ae.id);
                         setActiveDropdown(null);
                       }}
-                      className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-xs transition-colors text-left ${
+                      className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-xs transition-colors text-start ${
                         bgEffect === ae.id 
                           ? 'bg-orange-500/10 text-orange-400' 
                           : 'hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200'
@@ -302,9 +302,9 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-left cursor-default"
+                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-start cursor-default"
               >
-                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1 mb-1 border-b border-white/5 pb-1">Native Standard</h4>
+                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ps-1 mb-1 border-b border-white/5 pb-1">Native Standard</h4>
                 <div className="space-y-1">
                   {appCurrencies.map((curr) => (
                     <button
@@ -361,9 +361,9 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-left cursor-default space-y-2"
+                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-start cursor-default space-y-2"
               >
-                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1 border-b border-white/5 pb-1">Local Ledger Tools</h4>
+                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ps-1 border-b border-white/5 pb-1">Local Ledger Tools</h4>
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={handleExportData}
@@ -415,7 +415,7 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full bg-zinc-950/95 rounded-2xl p-4 border border-rose-500/30 shadow-2xl z-50 text-left backdrop-blur-md space-y-3"
+                className="absolute top-full mt-2 left-0 w-full bg-zinc-950/95 rounded-2xl p-4 border border-rose-500/30 shadow-2xl z-50 text-start backdrop-blur-md space-y-3"
               >
                 <div className="space-y-1">
                   <h4 className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Destructive Operation Protocol</h4>

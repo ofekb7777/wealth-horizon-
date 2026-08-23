@@ -324,7 +324,7 @@ export default function Budgets({
                       {/* Delete budget target limit */}
                       <button
                         onClick={() => onDeleteBudget(b.id)}
-                        className="absolute top-4 right-4 text-zinc-600 hover:text-rose-400 p-2 rounded-full hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                        className="absolute top-4 end-4 text-zinc-600 hover:text-rose-400 p-2 rounded-full hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
                         title="Remove budget target"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -341,7 +341,7 @@ export default function Budgets({
                           </div>
                           
                           {/* Limit Edit / Display info */}
-                          <div className="flex items-center gap-2 self-start mr-8">
+                          <div className="flex items-center gap-2 self-start me-8">
                             {b.isExceeded ? (
                               <span className="px-2.5 py-1 bg-rose-500/15 border border-rose-500/20 text-rose-400 text-[8px] font-bold uppercase rounded-full tracking-widest animate-pulse">
                                 Over by {symbol}{overBy.toFixed(0)}
@@ -374,7 +374,7 @@ export default function Budgets({
                             </div>
                           </div>
 
-                          <div className="space-y-0.5 text-right">
+                          <div className="space-y-0.5 text-end">
                             <span className="text-[8px] uppercase text-zinc-500 font-black tracking-widest block">Actual Spent</span>
                             <span className="font-mono text-xs font-bold text-zinc-300 block">
                               {symbol}{b.spentDisplay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -457,7 +457,7 @@ export default function Budgets({
 
                   {newCategoryType === 'existing' ? (
                     <div className="space-y-2">
-                      <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest pl-1">Category preset</label>
+                      <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest ps-1">Category preset</label>
                       <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
@@ -474,7 +474,7 @@ export default function Budgets({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest pl-1">Custom Category Name</label>
+                      <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest ps-1">Custom Category Name</label>
                       <input
                         type="text"
                         placeholder="e.g. Vacation, Holiday"
@@ -487,22 +487,22 @@ export default function Budgets({
 
                   {/* Limit input */}
                   <div className="space-y-2">
-                    <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest pl-1">Monthly Spending Limit ({symbol})</label>
+                    <label className="text-[8px] uppercase font-black text-zinc-500 tracking-widest ps-1">Monthly Spending Limit ({symbol})</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-mono text-xs">{symbol}</span>
+                      <span className="absolute start-4 top-1/2 -translate-y-1/2 text-zinc-500 font-mono text-xs">{symbol}</span>
                       <input
                         type="number"
                         placeholder="0.00"
                         step="any"
                         value={newLimitInput}
                         onChange={(e) => setNewLimitInput(e.target.value)}
-                        className="w-full bg-zinc-800 border border-white/10 text-zinc-200 pl-8 pr-4 py-2.5 rounded-2xl outline-none font-mono text-xs font-bold"
+                        className="w-full bg-zinc-800 border border-white/10 text-zinc-200 ps-8 pe-4 py-2.5 rounded-2xl outline-none font-mono text-xs font-bold"
                       />
                     </div>
                   </div>
 
                   {formError && (
-                    <div className="text-[9px] text-rose-400 font-bold uppercase tracking-wide flex items-center gap-1 pl-1">
+                    <div className="text-[9px] text-rose-400 font-bold uppercase tracking-wide flex items-center gap-1 ps-1">
                       <AlertCircle className="h-3.5 w-3.5" />
                       {formError}
                     </div>
