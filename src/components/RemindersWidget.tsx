@@ -7,21 +7,14 @@ interface RemindersWidgetProps {
   reminders: Reminder[];
   onAddReminder: (subject: string, body: string, time: string, recurrence?: 'monthly', dayOfMonth?: number) => void;
   onDeleteReminder: (id: string) => void;
-  accessToken: string | null;
-  onRequiresAuth: () => void;
 }
 
-export default function RemindersWidget({ reminders, onAddReminder, onDeleteReminder, accessToken, onRequiresAuth }: RemindersWidgetProps) {
+export default function RemindersWidget({ reminders, onAddReminder, onDeleteReminder }: RemindersWidgetProps) {
   const [dayOfMonth, setDayOfMonth] = useState<number>(1);
   const [isAdding, setIsAdding] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accessToken) {
-      onRequiresAuth();
-      return;
-    }
-    
     if (dayOfMonth) {
        const subject = "Paycheck Data Reminder";
        const body = "Please input your paycheck data into Wealth Horizon.";

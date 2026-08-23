@@ -1,20 +1,17 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
-import { AuthProvider } from './context/AuthContext.tsx';
 import { ThemeProvider } from './context/ThemeContext.tsx';
 import { VersionProvider } from './context/VersionContext.tsx';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <ThemeProvider>
-        <VersionProvider>
-          <App />
-        </VersionProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <VersionProvider>
+        <App />
+      </VersionProvider>
+    </ThemeProvider>
   </StrictMode>,
 );
 

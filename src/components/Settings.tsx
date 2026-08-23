@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Theme, BgEffect, MonoStyle } from '../context/ThemeContext';
 import { Currency, CURRENCIES, SpreadsheetState } from '../types';
-import { AppUser } from '../data';
 import { 
   Palette, 
   Sparkles, 
@@ -32,15 +31,11 @@ interface SettingsProps {
   onSetMonoStyle: (style: MonoStyle) => void;
   currency: Currency;
   onSetCurrency: (currency: Currency) => void;
-  user: AppUser | null;
-  isAdmin: boolean;
   state: SpreadsheetState;
   onImportState: (state: SpreadsheetState) => void;
   onResetData: () => void;
-  onAddReminder?: (subject: string, body: string, time: string) => void;
-  onDeleteReminder?: (id: string) => void;
-  accessToken?: string | null;
-  onRequiresAuth?: () => void;
+  onAddReminder: (subject: string, body: string, time: string, recurrence?: 'monthly', dayOfMonth?: number) => void;
+  onDeleteReminder: (id: string) => void;
 }
 
 export default function Settings({
@@ -52,30 +47,18 @@ export default function Settings({
   onSetMonoStyle,
   currency,
   onSetCurrency,
-  user,
-  isAdmin,
   state,
   onImportState,
   onResetData,
   onAddReminder,
-  onDeleteReminder,
-  accessToken,
-  onRequiresAuth
+  onDeleteReminder
 }: SettingsProps) {
-  const [activeDropdown, setActiveDropdown] = useState<'theme' | 'effect' | 'currency' | 'user' | 'backup' | 'reset' | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'theme' | 'effect' | 'currency' | 'backup' | 'reset' | null>(null);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
   const [copiedUid, setCopiedUid] = useState(false);
 
-  const toggleDropdown = (type: 'theme' | 'effect' | 'currency' | 'user' | 'backup' | 'reset') => {
+  const toggleDropdown = (type: 'theme' | 'effect' | 'currency' | 'backup' | 'reset') => {
     setActiveDropdown(prev => prev === type ? null : type);
-  };
-
-  const handleCopyUid = () => {
-    if (user?.uid) {
-      navigator.clipboard.writeText(user.uid);
-      setCopiedUid(true);
-      setTimeout(() => setCopiedUid(false), 2000);
-    }
   };
 
   const handleExportData = () => {
@@ -346,69 +329,6 @@ export default function Settings({
           </AnimatePresence>
         </div>
 
-        {/* Card 4: User Credentials (Sleek matching stats) */}
-        <div className="relative w-full">
-          <button 
-            onClick={() => toggleDropdown('user')}
-            className={`p-4 border border-zinc-500/20 space-y-2 flex flex-col items-center justify-center text-center 
-              transition-all duration-200 w-full rounded-2xl relative group min-h-[140px]
-              glass-card bg-zinc-900/40
-              shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] cursor-pointer
-              ${activeDropdown === 'user' ? 'border-violet-500/50 shadow-[0_20px_40px_-15px_rgba(139,92,246,0.3)]' : 'hover:border-violet-500/20'}`}
-          >
-            <div className="p-2 w-fit rounded-xl bg-violet-500/10 border border-violet-500/20">
-              <UserIcon className="h-5 w-5 text-violet-400" />
-            </div>
-            
-            <div className="flex flex-col gap-1 items-center min-w-0 w-full">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">User Identity</p>
-              <p className="text-base font-black tracking-tighter text-zinc-100 flex items-center gap-1.5 justify-center truncate w-full px-2">
-                {user?.displayName || "Standard User"}
-                <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform ${activeDropdown === 'user' ? 'rotate-180' : ''}`} />
-              </p>
-            </div>
-          </button>
-
-          <AnimatePresence>
-            {activeDropdown === 'user' && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-4 border border-zinc-500/20 shadow-2xl z-50 text-left cursor-default space-y-3"
-              >
-                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest border-b border-white/5 pb-1">Verified Profile Token</h4>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full border border-pink-500/30 bg-zinc-900 flex items-center justify-center shrink-0">
-                    {user?.photoURL ? (
-                      <img src={user.photoURL} alt="User Avatar" className="h-full w-full rounded-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <UserIcon className="h-4.5 w-4.5 text-zinc-500" />
-                    )}
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-black text-zinc-100 truncate">{user?.displayName || "Anonymous Terminal User"}</span>
-                    <span className="text-[8px] text-zinc-500 font-mono truncate">{user?.email || "No email synchronized"}</span>
-                  </div>
-                </div>
-
-                <div className="p-2.5 bg-zinc-800 rounded-xl border border-white/10 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[7px] font-black uppercase text-zinc-400 tracking-wider">Storage Key Identifier</span>
-                    <button 
-                      onClick={handleCopyUid} 
-                      className="text-[7px] font-black px-2 py-1 rounded bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 uppercase tracking-widest active:scale-95 transition-all"
-                    >
-                      {copiedUid ? 'Copied' : 'Copy'}
-                    </button>
-                  </div>
-                  <span className="text-[9px] font-mono text-zinc-200 block break-all">{user?.uid || 'Not Activated'}</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
         {/* Card 5: Snapshot Backups */}
         <div className="relative w-full">
           <button 
@@ -549,16 +469,6 @@ export default function Settings({
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <div className="flex items-center gap-2.5">
-                <Globe className="h-4 w-4 text-zinc-400" />
-                <span className="text-xs font-bold text-zinc-300">Authority Scopes</span>
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded bg-zinc-900 border border-white/5 text-zinc-400">
-                {isAdmin ? 'ROOT ACCREDITED' : 'SECURE NODE USER'}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <div className="flex items-center gap-2.5">
                 <RefreshCw className="h-4 w-4 text-zinc-400" />
                 <span className="text-xs font-bold text-zinc-300">Cloud Sync Protocol</span>
               </div>
@@ -580,10 +490,8 @@ export default function Settings({
         <div className="h-[350px]">
           <RemindersWidget 
             reminders={state.reminders || []}
-            onAddReminder={onAddReminder!}
-            onDeleteReminder={onDeleteReminder!}
-            accessToken={accessToken || null}
-            onRequiresAuth={onRequiresAuth!}
+            onAddReminder={onAddReminder}
+            onDeleteReminder={onDeleteReminder}
           />
         </div>
       </div>

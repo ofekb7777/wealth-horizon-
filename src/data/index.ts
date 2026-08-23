@@ -1,14 +1,24 @@
 import { Repository } from './Repository';
-import { FirebaseRepository } from './FirebaseRepository';
+import { SqliteRepository } from './SqliteRepository';
 
 /**
  * נקודת החיבור של שכבת הנתונים — המקום היחיד שבוחר מימוש.
  *
- * ⬅️ **בשלב 2 משנים כאן שורה אחת בלבד:**
- *    `new FirebaseRepository()` → `new SqliteRepository()`
- *    שאר האפליקציה לא יודעת ולא מעניין אותה מי מאחורי החוזה.
+ * שלב 2 החליף כאן שורה אחת: `FirebaseRepository` → `SqliteRepository`.
+ * שאר האפליקציה לא השתנתה בכלל, כי שניהם מממשים את אותו חוזה.
  */
-export const repository: Repository = new FirebaseRepository();
+const sqliteRepository = new SqliteRepository();
+
+export const repository: Repository = sqliteRepository;
+
+/**
+ * פותח את מסד הנתונים ומריץ מיגרציות.
+ * חייב לרוץ פעם אחת בעליית האפליקציה, לפני כל קריאה ל-`repository`.
+ */
+export const initDatabase = () => sqliteRepository.open();
+
+/** מחיקה מלאה כולל תזכורות ופרופיל — עבור כפתור "מחק הכל" בהגדרות. */
+export const wipeEverything = () => sqliteRepository.wipeEverything();
 
 export type { Repository } from './Repository';
 export * from './types';

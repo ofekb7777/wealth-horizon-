@@ -69,9 +69,6 @@ export interface UserProfile {
   activeSheetId?: string;
   notes?: string;
   patchNotes?: string;
-  theme?: string;
-  bgEffect?: string;
-  monoStyle?: string;
 }
 
 /**

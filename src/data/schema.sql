@@ -62,15 +62,13 @@ CREATE TABLE IF NOT EXISTS reminders (
   dayOfMonth    INTEGER
 );
 
--- שורה יחידה (id=1) שמחזיקה את כל העדפות המשתמש.
+-- שורה יחידה (id=1) שמחזיקה את מצב ה-UI שכן שייך לנתונים.
+-- העדפות תצוגה (ערכת נושא, אפקט רקע) יושבות ב-localStorage — ראה ThemeContext.
 CREATE TABLE IF NOT EXISTS user_profile (
   id            INTEGER PRIMARY KEY CHECK (id = 1),
   activeSheetId TEXT,
   notes         TEXT,
-  patchNotes    TEXT,
-  theme         TEXT,
-  bgEffect      TEXT,
-  monoStyle     TEXT
+  patchNotes    TEXT
 );
 
 INSERT OR IGNORE INTO user_profile (id) VALUES (1);

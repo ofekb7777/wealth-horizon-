@@ -13,15 +13,11 @@ interface HomeProps {
   currency: Currency;
   patchNotes: string;
   onUpdatePatchNotes: (notes: string) => void;
-  onBroadcastUpdate?: (notes: string) => void;
   onImportState: (state: SpreadsheetState) => void;
-  isAdmin?: boolean;
   onInstall?: () => void;
   showInstallButton?: boolean;
   onAddReminder?: (subject: string, body: string, time: string) => void;
   onDeleteReminder?: (id: string) => void;
-  accessToken?: string | null;
-  onRequiresAuth?: () => void;
 }
 
 export default function Home({ 
@@ -30,15 +26,11 @@ export default function Home({
   currency, 
   patchNotes, 
   onUpdatePatchNotes, 
-  onBroadcastUpdate, 
   onImportState, 
-  isAdmin,
   onInstall,
   showInstallButton,
   onAddReminder,
   onDeleteReminder,
-  accessToken,
-  onRequiresAuth
 }: HomeProps) {
   const { version } = useVersion();
   const { transactions, accounts, investments, goals } = state;
@@ -60,16 +52,6 @@ export default function Home({
 
   const handlePatchSubmit = async () => {
     onUpdatePatchNotes(localPatch);
-    if (isAdmin && onBroadcastUpdate) {
-      setIsBroadcasting(true);
-      try {
-        await onBroadcastUpdate(localPatch);
-      } catch (err) {
-        console.error("Home.tsx: Broadcast error", err);
-      } finally {
-        setIsBroadcasting(false);
-      }
-    }
     setIsEditingPatch(false);
   };
 
@@ -162,18 +144,16 @@ export default function Home({
               <span className="text-[10px] font-black text-pink-500 uppercase tracking-[0.3em] italic">System Update</span>
             </div>
             
-            {isAdmin && (
-              <button 
-                onClick={() => {
-                  setLocalPatch(patchNotes);
-                  setIsEditingPatch(!isEditingPatch);
-                }}
-                className="p-2 rounded-lg bg-white/5 text-zinc-500 hover:text-zinc-100 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
-                title="Edit Build Notes"
-              >
-                <Settings className="h-4 w-4" />
-              </button>
-            )}
+            <button 
+              onClick={() => {
+                setLocalPatch(patchNotes);
+                setIsEditingPatch(!isEditingPatch);
+              }}
+              className="p-2 rounded-lg bg-white/5 text-zinc-500 hover:text-zinc-100 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
+              title="Edit notes"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
           </div>
 
           {isEditingPatch ? (
