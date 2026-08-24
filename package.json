@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test:widget": "esbuild src/widget/snapshot.ts --bundle --format=cjs --platform=node --outfile=.test-build/snapshot.cjs --log-level=error && node src/widget/__tests__/snapshot.test.cjs"
+    "test:widget": "esbuild src/widget/snapshot.ts --bundle --format=cjs --platform=node --outfile=.test-build/snapshot.cjs --log-level=error && node src/widget/__tests__/snapshot.test.cjs",
+    "verify:android": "python3 scripts/verify-android.py"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.1",

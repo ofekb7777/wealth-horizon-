@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  מחרוזות הווידג'ט.
+
+  בעברית ישירות ולא דרך תיקיית values-he: זו אפליקציה אישית בשפה אחת,
+  ואם המכשיר מוגדר באנגלית עדיין נכון להציג את הווידג'ט בעברית כמו
+  את האפליקציה.
+-->
+<resources>
+    <string name="widget_small_label">Wealth Horizon — יתרה</string>
+    <string name="widget_large_label">Wealth Horizon — מבט חודשי</string>
+
+    <string name="widget_balance_title">שווי נקי</string>
+    <string name="widget_recent_title">תנועות אחרונות</string>
+
+    <string name="widget_no_data">—</string>
+    <string name="widget_open_app">פתח את האפליקציה כדי להתחיל</string>
+
+    <!-- %1$s הוצא, %2$s תקציב, %3$d אחוז -->
+    <string name="widget_budget_line">%1$s מתוך %2$s · %3$d%%</string>
+    <string name="widget_spend_only">הוצאת %1$s החודש</string>
+    <string name="widget_updated_at">עודכן %1$s</string>
+</resources>

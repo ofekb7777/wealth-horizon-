@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  4x2. הנוסחה של אנדרואיד לגודל תא היא 70*n-30 dp,
+  ולכן 4 תאים = 250dp ו-2 תאים = 110dp.
+
+  updatePeriodMillis="0" בכוונה: הווידג'ט לא מתעורר מעצמו ולא מעיר
+  את המכשיר. האפליקציה דוחפת אליו עדכון אחרי כל שינוי בנתונים.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/widget_small"
+    android:previewLayout="@layout/widget_small"
+    android:description="@string/widget_small_label"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen" />
