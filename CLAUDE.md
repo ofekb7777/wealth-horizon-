@@ -32,7 +32,7 @@
 | `vite-plugin-pwa` | ✅ **הוסר בשלב 3** |
 | Capacitor + פלטפורמת android | ✅ נכנס בשלב 3 — `com.ofekb.wealthhorizon` |
 | `@fontsource/*` | ✅ נכנס בשלב 3 — פונטים ארוזים, לא מ-CDN |
-| Jetpack Glance (Kotlin) | ➕ נכנס בשלב 4 — הווידג'ט |
+| ווידג'ט אנדרואיד | ✅ נכנס בשלב 4 — RemoteViews ב-Java, **לא** Glance (ראה §9) |
 
 ---
 
@@ -77,6 +77,10 @@ src/
 │   └── VersionContext.tsx   גרסת אפליקציה
 ├── i18n/
 │   └── he.ts                ⭐ כל הטקסט שמוצג למשתמש, מיוצא כ-`txt`
+├── widget/
+│   ├── snapshot.ts          בונה את ה-snapshot לווידג'ט (פונקציה טהורה)
+│   ├── index.ts             הגשר ל-Capacitor, עם השהיה של 1.5ש'
+│   └── __tests__/           19 בדיקות — `npm run test:widget`
 ├── native/
 │   └── index.ts             עטיפת Capacitor — סרגל סטטוס, splash, כפתור "חזור"
 └── services/
@@ -231,4 +235,30 @@ npm run build && npx cap sync   # ⚠️ שכחת sync = הטלפון מציג �
 npx cap open android            # פותח את Android Studio
 ```
 
+```bash
+npm run test:widget       # 19 בדיקות ל-buildSnapshot
+npm run verify:android    # תקינות XML + הפניות למשאבים (לא בנייה)
+```
+
 **חובה בסוף כל שלב:** `npm run lint && npm run build` — שניהם נקיים.
+
+---
+
+## 9. הווידג'ט — למה RemoteViews ולא Glance
+
+הבריף ביקש Jetpack Glance ב-Kotlin. נבחר **RemoteViews ב-Java**.
+
+**הסיבה:** Glance מחייב תוסף Kotlin + מהדר Compose + תלות Glance, ושלושתם
+צריכים להיות מיושרים מול AGP. אי אפשר לקמפל בסביבת הפיתוח הזו (אין Android
+SDK), ואי-התאמת גרסאות הייתה משאירה את אופק מול שגיאות Gradle. הווידג'ט הוא
+טקסט ופס התקדמות — RemoteViews מספיק, בלי להוסיף כלום לשרשרת הבנייה.
+
+**מתי כן לעבור ל-Glance:** אחרי שהווידג'ט מוכח כעובד על המכשיר, ואם רוצים
+Material You דינמי או פריסות מורכבות יותר.
+
+**ארכיטקטורה:** הווידג'ט לא ניגש ל-SQLite ולא לרשת. האפליקציה כותבת
+`snapshot` ל-SharedPreferences אחרי כל שינוי, והווידג'ט קורא רק אותו.
+`updatePeriodMillis=0` — הוא לא מתעורר לבד ולא מעיר את המכשיר.
+
+**מציג שעה מוחלטת** ("עודכן 14:32") ולא "לפני X דקות": הווידג'ט מתרנדר רק
+כשהנתונים משתנים, וזמן יחסי היה נתקע ונשאר שגוי.
