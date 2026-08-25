@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { txt, categoryLabel } from '../i18n/he';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
-import { SpreadsheetState, Currency, CURRENCIES } from '../types';
+import { SpreadsheetState, Currency, CURRENCIES, Transaction } from '../types';
 import { Wallet, TrendingUp, TrendingDown, Target, Terminal, Settings, Check, X, Zap, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useVersion } from '../context/VersionContext';
@@ -106,10 +106,20 @@ export default function Home({
 
     const monthlyChartData = Object.values(monthlyData).sort((a, b) => a.unix - b.unix);
 
+    // סיכומי החודש הנוכחי, לכרטיסי "נכנס" ו"יצא".
+    const today = new Date();
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const isExpense = (t: Transaction) => t.type ? t.type === 'expense' : t.amount < 0;
+    const thisMonth = (transactions || []).filter(t => new Date(t.date) >= monthStart);
+    const monthIncome = thisMonth.filter(t => !isExpense(t)).reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const monthExpenses = thisMonth.filter(isExpense).reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
     return {
       cashBalance,
       investmentsValue,
       totalNetWorth,
+      monthIncome,
+      monthExpenses,
       monthlyChartData,
       trendData
     };
@@ -198,8 +208,8 @@ export default function Home({
             </div>
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{txt.home.cashAssets}</span>
           </div>
-          <div className="text-2xl font-black font-mono text-zinc-100 mt-2">
-            {symbol}{(summaryData.cashBalance * rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+          <div className="text-xl sm:text-2xl font-black font-mono text-zinc-100 mt-2 tracking-tighter whitespace-nowrap">
+            {symbol}{(summaryData.cashBalance * rate).toLocaleString('en-US', {maximumFractionDigits: 0})}
           </div>
         </div>
         
@@ -213,8 +223,8 @@ export default function Home({
             </div>
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{txt.screens.investments}</span>
           </div>
-          <div className="text-2xl font-black font-mono text-zinc-100 mt-2">
-            {symbol}{(summaryData.investmentsValue * rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+          <div className="text-xl sm:text-2xl font-black font-mono text-zinc-100 mt-2 tracking-tighter whitespace-nowrap">
+            {symbol}{(summaryData.investmentsValue * rate).toLocaleString('en-US', {maximumFractionDigits: 0})}
           </div>
         </div>
 
@@ -228,8 +238,11 @@ export default function Home({
             </div>
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{txt.home.inflow}</span>
           </div>
-          <div className="text-sm font-bold text-zinc-400 mt-2 group-hover:text-emerald-400 flex items-center gap-2">
-            {txt.home.manage} <span className="text-lg">&larr;</span>
+          <div className="text-xl sm:text-2xl font-black font-mono text-emerald-400 tracking-tighter whitespace-nowrap">
+            {symbol}{(summaryData.monthIncome * rate).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+          </div>
+          <div className="text-[11px] font-bold text-zinc-500 group-hover:text-emerald-400 flex items-center gap-2">
+            {txt.home.manage} <span className="text-base">&larr;</span>
           </div>
         </div>
 
@@ -243,8 +256,11 @@ export default function Home({
             </div>
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{txt.home.outflow}</span>
           </div>
-          <div className="text-sm font-bold text-zinc-400 mt-2 group-hover:text-rose-400 flex items-center gap-2">
-            {txt.home.manage} <span className="text-lg">&larr;</span>
+          <div className="text-xl sm:text-2xl font-black font-mono text-rose-400 tracking-tighter whitespace-nowrap">
+            {symbol}{(summaryData.monthExpenses * rate).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+          </div>
+          <div className="text-[11px] font-bold text-zinc-500 group-hover:text-rose-400 flex items-center gap-2">
+            {txt.home.manage} <span className="text-base">&larr;</span>
           </div>
         </div>
       </div>
@@ -263,7 +279,7 @@ export default function Home({
                   txt.home.totalNetWorth
                 )}
               </h3>
-              <div className="text-3xl md:text-4xl font-black font-mono text-zinc-100 tracking-tighter">
+              <div className="text-2xl sm:text-3xl md:text-4xl font-black font-mono text-zinc-100 tracking-tighter whitespace-nowrap">
                 {symbol}{( (hoveredNet ? hoveredNet.balance : summaryData.totalNetWorth) * rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
               </div>
             </div>

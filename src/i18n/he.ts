@@ -56,6 +56,7 @@ export const txt = {
     cashAssets: 'מזומן ונזיל',
     totalAssets: 'סך הנכסים',
     monthlyFlow: 'תזרים חודשי',
+    netFlow: 'עודף החודש',   // הכנסות פחות הוצאות, בשקלים
     totalValue: 'שווי כולל',
     snapshot: 'נקודת זמן',
     inflow: 'נכנס',
@@ -101,6 +102,7 @@ export const txt = {
   budgets: {
     title: 'תקציבים',
     subtitle: 'כמה מותר להוציא בכל קטגוריה',
+    totalLimitHint: 'סכום כל התקרות',
     create: 'תקציב חדש',
     limit: 'תקרה',
     exceededBy: 'חריגה של',
@@ -108,6 +110,9 @@ export const txt = {
     remaining: 'נשאר',
     totalLimit: 'סך התקציב',
     overBudget: 'חריגה',
+    overBy: 'חריגה של',
+    underControl: 'בשליטה',
+    spendingTarget: 'תקרה חודשית',
     optimal: 'בסדר גמור',
     safetyMargin: 'עוד יש מרווח',
     excellent: 'הרבה מתחת לתקציב',
@@ -176,6 +181,7 @@ export const txt = {
   analytics: {
     title: 'ניתוח',
     subtitle: 'לאן הכסף הולך',
+    netFlowHint: 'הכנסות פחות הוצאות',
     liveStatus: 'הנתונים מעודכנים',
     tabOverview: 'סקירה',
     tabGoals: 'יעדים',

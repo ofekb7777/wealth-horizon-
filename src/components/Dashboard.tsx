@@ -245,8 +245,8 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                   </div>
                   <div className="p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 bg-zinc-900/40 backdrop-blur-3xl h-auto md:h-[240px] flex flex-col justify-center relative overflow-hidden group">
                      <div className="absolute top-0 right-0 w-48 h-48 bg-pink-500/10 blur-[80px] rounded-full -me-20 -mt-20 group-hover:bg-pink-500/20 transition-all duration-700" />
-                     <div className="text-[10px] uppercase font-black tracking-[0.4em] text-zinc-500 mb-2 md:mb-4">{txt.home.cashAssets}</div>
-                     <div className="text-4xl md:text-6xl font-black text-zinc-100 font-mono tracking-tighter mb-4 md:mb-8 leading-none italic">
+                     <div className="text-[10px] uppercase font-black tracking-[0.4em] text-zinc-500 mb-2 md:mb-4">{txt.home.netWorth}</div>
+                     <div className="text-3xl sm:text-4xl md:text-6xl font-black text-zinc-100 font-mono tracking-tighter mb-4 md:mb-8 leading-none italic whitespace-nowrap">
                        {summaryData.totalNetWorth > 0 ? '+' : ''}{symbol}{(summaryData.totalNetWorth * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                      </div>
                      <div className="flex gap-4 items-center">
@@ -267,8 +267,8 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                   </div>
                   <div className="p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 bg-zinc-900/40 backdrop-blur-3xl h-auto md:h-[240px] flex flex-col justify-center relative overflow-hidden group">
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/5 blur-[50px] rounded-full" />
-                    <div className="text-[10px] uppercase font-black tracking-[0.3em] text-zinc-500 mb-3">{txt.home.savingsRate}</div>
-                    <div className="text-2xl md:text-4xl font-black text-zinc-100 font-mono tracking-widest">
+                    <div className="text-[10px] uppercase font-black tracking-[0.3em] text-zinc-500 mb-3">{txt.home.netFlow}</div>
+                    <div className="text-xl sm:text-2xl md:text-4xl font-black text-zinc-100 font-mono tracking-tight whitespace-nowrap">
                       {summaryData.totalIncome > summaryData.totalExpenses ? '+' : ''}{symbol}{((summaryData.totalIncome - summaryData.totalExpenses) * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <div className="mt-8 flex gap-1 items-end justify-between h-12">
@@ -300,11 +300,11 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                 <div className="group relative p-6 rounded-2xl border border-white/5 bg-white/[0.03] backdrop-blur-xl overflow-hidden transition-all hover:border-white/20 hover:bg-white/[0.05]">
                   <div className="absolute top-0 right-0 p-2 opacity-50"><div className="h-2 w-2 rounded-full bg-emerald-400 blur-[2px]" /></div>
                   <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 mb-3 group-hover:text-emerald-400 transition-colors">{txt.analytics.cashFlow}</div>
-                  <div className={`text-3xl font-black font-mono tracking-tighter ${summaryData.totalIncome - summaryData.totalExpenses >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <div className={`text-2xl sm:text-3xl font-black font-mono tracking-tighter whitespace-nowrap ${summaryData.totalIncome - summaryData.totalExpenses >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {symbol}{((summaryData.totalIncome - summaryData.totalExpenses) * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <div className="mt-3 flex items-center justify-between text-[9px] font-bold text-white/20 uppercase tracking-widest">
-                    <span>{txt.home.savingsRate}</span>
+                    <span>{txt.analytics.netFlowHint}</span>
                     <span className="text-emerald-400/50">{txt.budgets.optimal}</span>
                   </div>
                 </div>
@@ -375,7 +375,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                      {summaryData.assetAllocation.map((entry, index) => (
                         <div key={entry.name} className="flex items-center gap-2">
                            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                           <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter truncate">{entry.name}</span>
+                           <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter whitespace-nowrap">{entry.name}</span>
                         </div>
                      ))}
                   </div>
