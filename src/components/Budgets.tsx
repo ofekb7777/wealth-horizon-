@@ -241,7 +241,7 @@ export default function Budgets({
                   {totalBudgetDisplay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
-              <p className="text-[9px] text-zinc-500 font-medium uppercase mt-2">{txt.budgets.subtitle}</p>
+              <p className="text-[9px] text-zinc-500 font-medium uppercase mt-2">{txt.budgets.totalLimitHint}</p>
             </div>
 
             {/* Total Spent */}
@@ -337,7 +337,7 @@ export default function Budgets({
                           <div className="space-y-1">
                             <span className="text-xs font-black text-zinc-200 uppercase tracking-wider block">{categoryLabel(b.category)}</span>
                             <span className="text-[9px] text-zinc-500 font-medium uppercase tracking-widest block">
-                              Spending Target
+                              {txt.budgets.spendingTarget}
                             </span>
                           </div>
                           
@@ -345,11 +345,11 @@ export default function Budgets({
                           <div className="flex items-center gap-2 self-start me-8">
                             {b.isExceeded ? (
                               <span className="px-2.5 py-1 bg-rose-500/15 border border-rose-500/20 text-rose-400 text-[8px] font-bold uppercase rounded-full tracking-widest animate-pulse">
-                                Over by {symbol}{overBy.toFixed(0)}
+                                {txt.budgets.overBy} {symbol}{overBy.toFixed(0)}
                               </span>
                             ) : (
                               <span className="px-2.5 py-1 bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 text-[8px] font-bold uppercase rounded-full tracking-widest">
-                                Under control
+                                {txt.budgets.underControl}
                               </span>
                             )}
                           </div>
@@ -358,7 +358,7 @@ export default function Budgets({
                         {/* Limit Input Block */}
                         <div className="grid grid-cols-2 gap-4 items-center bg-zinc-800/10 border border-white/5 p-4 rounded-2xl">
                           <div className="space-y-0.5">
-                            <span className="text-[8px] uppercase text-zinc-500 font-black tracking-widest">Limit ({symbol})</span>
+                            <span className="text-[8px] uppercase text-zinc-500 font-black tracking-widest">{txt.budgets.limit} ({symbol})</span>
                             <div className="flex items-center gap-1 select-none">
                               <span className="text-zinc-600 text-xs font-mono">{symbol}</span>
                               <input
