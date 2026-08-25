@@ -161,6 +161,7 @@ adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 | מסך לבן / ריק | `dist` לא הועתק | הרץ `npm run build && npx cap sync` ובנה שוב |
 | שינויים בקוד לא מופיעים | שכחת sync | `npm run build && npx cap sync` — **תמיד שניהם** |
 | רוצה לבדוק לפני בנייה | — | `npm run verify:android` בודק XML והפניות למשאבים בשניות, בלי Gradle |
+| רוצה לוודא שה-Java מתקמפל | — | `npm run check:java` מקמפל את קוד הווידג'ט מול פלטפורמת אנדרואיד אמיתית |
 | `Could not resolve...` בזמן Gradle sync | אין אינטרנט או חומת אש | ודא חיבור; הבנייה הראשונה חייבת רשת |
 
 ---
