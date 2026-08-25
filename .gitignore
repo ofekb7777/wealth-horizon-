@@ -22,3 +22,4 @@ android/capacitor-cordova-android-plugins/
 *.apk
 *.aab
 .test-build/
+.java-check/

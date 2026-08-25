@@ -13,7 +13,8 @@
     "test:widget": "esbuild src/widget/snapshot.ts --bundle --format=cjs --platform=node --outfile=.test-build/snapshot.cjs --log-level=error && node src/widget/__tests__/snapshot.test.cjs",
     "verify:android": "python3 scripts/verify-android.py",
     "test:import": "esbuild src/services/bankImport.ts --bundle --format=cjs --platform=node --external:xlsx --outfile=.test-build/bankImport.cjs --log-level=error && node src/services/__tests__/bankImport.test.cjs",
-    "test": "npm run test:widget && npm run test:import"
+    "test": "npm run test:widget && npm run test:import",
+    "check:java": "bash scripts/check-java.sh"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.1",
