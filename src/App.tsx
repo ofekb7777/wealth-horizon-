@@ -660,6 +660,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
               onAddTransaction={handleAddTransaction}
               onDeleteTransaction={handleDeleteTransaction}
               onImportTransactions={handleImportTransactions}
+              allTransactions={state.transactions}
               currency={currency}
             />
           )}
@@ -674,6 +675,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
               onAddTransaction={handleAddTransaction}
               onDeleteTransaction={handleDeleteTransaction}
               onImportTransactions={handleImportTransactions}
+              allTransactions={state.transactions}
               currency={currency}
             />
           )}

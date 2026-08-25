@@ -233,6 +233,39 @@ export const txt = {
     storageValue: 'SQLite מקומי על המכשיר',
   },
 
+  // --- ייבוא מהבנק ---
+  import: {
+    title: 'ייבוא מקובץ',
+    subtitle: 'קובץ Excel או CSV מהבנק או מחברת האשראי',
+    choose: 'בחר קובץ',
+    reading: 'קורא את הקובץ...',
+    sheet: 'גיליון',
+    headerRow: 'שורת כותרות',
+    mapping: 'מיפוי עמודות',
+    mappingHint: 'זוהה אוטומטית. אפשר לשנות אם משהו לא נכון.',
+    colDate: 'תאריך',
+    colDescription: 'תיאור',
+    colAmount: 'סכום',
+    colDebit: 'חובה (יוצא)',
+    colCredit: 'זכות (נכנס)',
+    colNone: '— ללא —',
+    incomplete: 'צריך לבחור לפחות תאריך, תיאור, וסכום אחד (או חובה/זכות).',
+    preview: 'תצוגה מקדימה',
+    previewCount: 'מציג %1$s מתוך %2$s',
+    account: 'לשייך לחשבון',
+    duplicate: 'כבר קיים',
+    duplicatesFound: 'זוהו %1$s תנועות שכבר קיימות',
+    duplicatesFoundOne: 'זוהתה תנועה אחת שכבר קיימת',
+    skipDuplicates: 'דלג על כפילויות',
+    skippedRows: '%1$s שורות דולגו',
+    skippedRowsOne: 'שורה אחת דולגה',
+    skippedTitle: 'שורות שלא יובאו',
+    nothingToImport: 'לא נמצאו תנועות לייבוא בקובץ הזה.',
+    confirm: 'ייבא %1$s תנועות',
+    confirmOne: 'ייבא תנועה אחת',
+    readFailed: 'לא הצלחתי לקרוא את הקובץ.',
+  },
+
   // --- תזכורות ---
   reminders: {
     title: 'תזכורות',
@@ -295,3 +328,12 @@ export const accountTypeLabel = (type: string): string =>
 /** שם תצוגה לדירוג המגמה. */
 export const trendLabel = (rating: string): string =>
   txt.trend[rating] ?? rating;
+
+/**
+ * בחירה בין צורת יחיד לרבים.
+ *
+ * בעברית "1 שורות דולגו" שגוי — מספר אחד דורש צורת יחיד. פונקציה קטנה
+ * במקום לפזר תנאים בקומפוננטות.
+ */
+export const plural = (count: number, one: string, many: string): string =>
+  count === 1 ? one : many.replace(/%1\$s/g, String(count));
