@@ -1,6 +1,7 @@
-import { Plus, Trash2, FileUp, Loader2 } from 'lucide-react';
-import React, { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
+import { Plus, Trash2, FileUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { txt, categoryLabel } from '../i18n/he';
+import ImportDialog from './ImportDialog';
 import { Transaction, Account, Budget, INCOME_CATEGORIES, EXPENSE_CATEGORIES, Currency, CURRENCIES } from '../types';
 
 interface SpreadsheetProps {
@@ -12,6 +13,11 @@ interface SpreadsheetProps {
   onAddTransaction: (type: 'income' | 'expense') => void;
   onDeleteTransaction: (id: string) => void;
   onImportTransactions: (newTransactions: Transaction[]) => void;
+  /**
+   * כל התנועות, לא רק אלה שמוצגות במסך הזה.
+   * זיהוי כפילויות חייב לבדוק מול הכנסות והוצאות גם יחד.
+   */
+  allTransactions: Transaction[];
   currency: Currency;
 }
 
@@ -24,100 +30,18 @@ export default function Spreadsheet({
   onAddTransaction,
   onDeleteTransaction,
   onImportTransactions,
+  allTransactions,
   currency
 }: SpreadsheetProps) {
   const symbol = CURRENCIES[currency].symbol;
   const rate = CURRENCIES[currency].rate;
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isImporting, setIsImporting] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const customCategories = budgets
     .map(b => b.category)
     .filter(cat => !EXPENSE_CATEGORIES.includes(cat));
   const expenseCategories = [...EXPENSE_CATEGORIES, ...customCategories];
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsImporting(true);
-    const reader = new FileReader();
-
-    reader.onload = (evt) => {
-      try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
-
-        // Basic heuristic for credit card/bank statements
-        // We'll look for columns like "Date", "Description", "Amount"
-        if (data.length < 2) throw new Error("File empty or invalid format");
-
-        const headers = data[0].map(h => String(h).toLowerCase());
-        const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('תאריך'));
-        const descIdx = headers.findIndex(h => h.includes('desc') || h.includes('תיאור') || h.includes('name'));
-        const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('סכום') || h.includes('value'));
-
-        if (dateIdx === -1 || descIdx === -1 || amountIdx === -1) {
-          alert("Could not automatically map columns. Please ensure your file has 'Date', 'Description', and 'Amount' headers.");
-          setIsImporting(false);
-          return;
-        }
-
-        const imported: Transaction[] = [];
-        for (let i = 1; i < data.length; i++) {
-          const row = data[i];
-          if (!row[dateIdx] || !row[descIdx]) continue;
-
-          let dateStr = "";
-          if (row[dateIdx] instanceof Date) {
-            dateStr = row[dateIdx].toISOString().split('T')[0];
-          } else {
-            // Try to parse string date
-            const d = new Date(row[dateIdx]);
-            if (!isNaN(d.getTime())) dateStr = d.toISOString().split('T')[0];
-          }
-
-          if (!dateStr) continue;
-
-          let rawAmount = parseFloat(String(row[amountIdx]).replace(/[^\d.-]/g, '')) || 0;
-          
-          // Ensure amount matches the viewType
-          // If importing into expenses, amount should be negative
-          // If importing into income, amount should be positive
-          let finalAmount = rawAmount;
-          if (viewType === 'expense' && finalAmount > 0) finalAmount = -finalAmount;
-          if (viewType === 'income' && finalAmount < 0) finalAmount = Math.abs(finalAmount);
-
-          imported.push({
-            id: Math.random().toString(36).substr(2, 9),
-            date: dateStr,
-            description: String(row[descIdx]).trim(),
-            category: viewType === 'income' ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0],
-            amount: finalAmount / rate, // Store as USD base
-            type: viewType
-          });
-        }
-
-        if (imported.length > 0) {
-          onImportTransactions(imported);
-          alert(`Successfully imported ${imported.length} transactions.`);
-        } else {
-          alert("No valid transactions found in file.");
-        }
-      } catch (err) {
-        console.error("Import error:", err);
-        alert("An error occurred while parsing the file.");
-      } finally {
-        setIsImporting(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      }
-    };
-
-    reader.readAsBinaryString(file);
-  };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-transparent relative">
@@ -129,29 +53,21 @@ export default function Spreadsheet({
         >
           <div className="absolute inset-0 bg-linear-to-r from-pink-500 to-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
           <Plus className="h-4 w-4 text-zinc-900 relative z-10 transition-colors" />
-          <span className="text-[10px] font-black text-zinc-900 relative z-10 uppercase tracking-widest whitespace-nowrap">Add {viewType}</span>
+          <span className="text-[10px] font-black text-zinc-900 relative z-10 uppercase tracking-widest whitespace-nowrap">{viewType === 'income' ? txt.ledger.addIncome : txt.ledger.addExpense}</span>
         </button>
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileUpload}
-          accept=".xlsx,.xls,.csv"
-          className="hidden"
-        />
 
         <div className="flex items-center gap-4">
           <div className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] hidden md:block">
-            {viewType === 'income' ? 'Revenue Records' : 'Expenditure Tracker'}
+            {viewType === 'income' ? txt.ledger.incomeTitle : txt.ledger.expensesTitle}
           </div>
           
           <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isImporting}
+            onClick={() => setShowImport(true)}
             className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest text-zinc-300 transition-all bg-white/5 border border-white/5 hover:bg-white/10 disabled:opacity-50"
           >
-            {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
-            Import
+            <FileUp className="h-4 w-4" />
+            {txt.ledger.importExcel}
           </button>
         </div>
       </div>
@@ -162,26 +78,27 @@ export default function Spreadsheet({
           <div key={t.id} className="glass-card rounded-[2rem] p-5 sm:p-6 md:p-8 shadow-2xl relative group overflow-hidden transition-all duration-300 hover:bg-zinc-900/60">
             <button
                onClick={() => onDeleteTransaction(t.id)}
-               className="absolute top-6 right-6 text-zinc-600 hover:text-rose-400 p-2 rounded-full hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"
+               className="absolute top-6 end-6 text-zinc-600 hover:text-rose-400 p-2 rounded-full hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"
+               title={txt.ledger.deleteRow}
             >
               <Trash2 className="h-5 w-5" />
             </button>
             <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-2">
-                <span className="text-[10px] uppercase text-zinc-500 font-black tracking-[0.3em]">Description</span>
+                <span className="text-[10px] uppercase text-zinc-500 font-black tracking-[0.3em]">{txt.common.description}</span>
                 <input
                   type="text"
                   value={t.description}
                   onChange={(e) => onUpdateTransaction(t.id, 'description', e.target.value)}
                   className="w-full bg-transparent outline-none font-display font-black text-2xl text-zinc-100 focus:text-white placeholder:text-zinc-700 transition-all"
-                  placeholder="Record description..."
+                  placeholder={txt.ledger.descriptionPlaceholder}
                 />
               </div>
               
               <div className="flex flex-col gap-2 p-6 rounded-3xl bg-zinc-800/30 border border-white/5">
-                <span className="text-[10px] uppercase text-zinc-500 font-black tracking-[0.3em]">Amount Detail</span>
+                <span className="text-[10px] uppercase text-zinc-500 font-black tracking-[0.3em]">{txt.common.amount}</span>
                 <div className="flex items-center">
-                  <span className={`font-mono text-2xl mr-2 ${viewType === 'income' ? 'text-pink-500 italic' : 'text-rose-400'}`}>{symbol}</span>
+                  <span className={`font-mono text-2xl me-2 ${viewType === 'income' ? 'text-pink-500 italic' : 'text-rose-400'}`}>{symbol}</span>
                   <div className="relative w-full min-w-0">
                     <input
                       type="number"
@@ -214,7 +131,7 @@ export default function Spreadsheet({
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5 flex flex-col">
-                  <span className="text-[10px] uppercase text-zinc-500 font-black tracking-[0.2em] ml-1">Event Date</span>
+                  <span className="text-[10px] uppercase text-zinc-500 font-black tracking-[0.2em] ms-1">{txt.common.date}</span>
                   <input
                     type="date"
                     value={t.date}
@@ -224,35 +141,35 @@ export default function Spreadsheet({
                 </div>
                 
                 <div className="space-y-1.5 flex flex-col">
-                  <span className="text-[10px] uppercase text-zinc-500 font-black tracking-[0.2em] ml-1">Classification</span>
+                  <span className="text-[10px] uppercase text-zinc-500 font-black tracking-[0.2em] ms-1">{txt.common.category}</span>
                   <div className="relative">
                     <select
                       value={t.category}
                       onChange={(e) => onUpdateTransaction(t.id, 'category', e.target.value)}
-                      className="w-full bg-zinc-800 border border-white/5 px-4 py-2 rounded-2xl outline-none font-black text-[10px] uppercase text-zinc-200 appearance-none transition-all cursor-pointer focus:border-pink-500/30 pr-10"
+                      className="w-full bg-zinc-800 border border-white/5 px-4 py-2 rounded-2xl outline-none font-black text-[10px] uppercase text-zinc-200 appearance-none transition-all cursor-pointer focus:border-pink-500/30 pe-10"
                     >
                       {(viewType === 'income' ? INCOME_CATEGORIES : expenseCategories).map(cat => (
-                        <option className="bg-zinc-900 text-zinc-100" key={cat} value={cat}>{cat}</option>
+                        <option className="bg-zinc-900 text-zinc-100" key={cat} value={cat}>{categoryLabel(cat)}</option>
                       ))}
                     </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600 font-black">&darr;</div>
+                    <div className="absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600 font-black">&darr;</div>
                   </div>
                 </div>
 
                 <div className="space-y-1.5 flex flex-col">
-                  <span className="text-[10px] uppercase text-zinc-500 font-black tracking-[0.2em] ml-1">Source Account</span>
+                  <span className="text-[10px] uppercase text-zinc-500 font-black tracking-[0.2em] ms-1">{txt.ledger.sourceAccount}</span>
                   <div className="relative">
                     <select
                       value={t.accountId || ''}
                       onChange={(e) => onUpdateTransaction(t.id, 'accountId', e.target.value)}
-                      className="w-full bg-zinc-800 border border-white/5 px-4 py-2 rounded-2xl outline-none font-black text-[10px] uppercase text-zinc-200 appearance-none transition-all cursor-pointer focus:border-pink-500/30 pr-10"
+                      className="w-full bg-zinc-800 border border-white/5 px-4 py-2 rounded-2xl outline-none font-black text-[10px] uppercase text-zinc-200 appearance-none transition-all cursor-pointer focus:border-pink-500/30 pe-10"
                     >
-                      <option className="bg-zinc-900 text-zinc-100" value="">Unassigned</option>
+                      <option className="bg-zinc-900 text-zinc-100" value="">{txt.common.unassigned}</option>
                       {accounts.map(acc => (
                         <option className="bg-zinc-900 text-zinc-100" key={acc.id} value={acc.id}>{acc.name}</option>
                       ))}
                     </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600 font-black">&darr;</div>
+                    <div className="absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600 font-black">&darr;</div>
                   </div>
                 </div>
               </div>
@@ -261,17 +178,27 @@ export default function Spreadsheet({
         ))}
         {transactions.length === 0 && (
           <div className="text-center py-20 glass-card rounded-[2.5rem] border-dashed border-white/10">
-            <div className="text-zinc-600 text-xs font-black uppercase tracking-[0.3em] italic">No active records found</div>
+            <div className="text-zinc-600 text-xs font-black uppercase tracking-[0.3em] italic">{txt.ledger.noRecords}</div>
             <button 
               onClick={() => onAddTransaction(viewType)}
               className="mt-4 text-pink-500 text-[10px] font-black uppercase tracking-widest hover:underline italic"
             >
-              Initialize first entry &darr;
+              {txt.ledger.addFirst} &darr;
             </button>
           </div>
         )}
         </div>
       </div>
+
+      {showImport && (
+        <ImportDialog
+          accounts={accounts}
+          existingTransactions={allTransactions}
+          currency={currency}
+          onImport={onImportTransactions}
+          onClose={() => setShowImport(false)}
+        />
+      )}
     </div>
   );
 }

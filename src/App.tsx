@@ -9,28 +9,28 @@ import Budgets from './components/Budgets.tsx';
 import Sidebar from './components/Sidebar.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import Home from './components/Home.tsx';
-import Login from './components/Login.tsx';
-import { useAuth } from './context/AuthContext.tsx';
+
 import { useTheme, ThemeProvider } from './context/ThemeContext.tsx';
 import { VersionProvider } from './context/VersionContext.tsx';
-import { firestoreService } from './services/firestoreService.ts';
-import { sendGmail } from './services/gmailService.ts';
-import { Globe, Loader2, LogOut, MessageSquare, X, Send, Check, Settings as SettingsIcon } from 'lucide-react';
+import { repository, initDatabase, wipeEverything } from './data';
+import { fetchPrices } from './services/marketData.ts';
+import { initStatusBar, hideSplashScreen, onAndroidBack } from './native';
+import { txt } from './i18n/he';
+import { publishSnapshot } from './widget';
+import { AlertTriangle, Loader2, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import AdminConsole from './components/AdminConsole.tsx';
 import { SpecialBackgroundEffect } from './components/SpecialBackgroundEffect.tsx';
 import Settings from './components/Settings.tsx';
 
-import InstallModal from './components/InstallModal.tsx';
 
 const INITIAL_SHEETS: Sheet[] = [
-  { id: '0', name: 'Home', icon: 'home', type: 'home' },
-  { id: '3', name: 'Accounts', icon: 'wallet', type: 'accounts' },
-  { id: '5', name: 'Analytics', icon: 'dashboard', type: 'dashboard' },
-  { id: '1', name: 'Income', icon: 'trending-up', type: 'income' },
-  { id: '2', name: 'Expenses', icon: 'trending-down', type: 'expenses' },
-  { id: '6', name: 'Budgets', icon: 'pie-chart', type: 'budget' },
-  { id: '4', name: 'Investments', icon: 'investments', type: 'investments' },
+  { id: '0', name: txt.screens.home, icon: 'home', type: 'home' },
+  { id: '3', name: txt.screens.accounts, icon: 'wallet', type: 'accounts' },
+  { id: '5', name: txt.screens.analytics, icon: 'dashboard', type: 'dashboard' },
+  { id: '1', name: txt.screens.income, icon: 'trending-up', type: 'income' },
+  { id: '2', name: txt.screens.expenses, icon: 'trending-down', type: 'expenses' },
+  { id: '6', name: txt.screens.budgets, icon: 'pie-chart', type: 'budget' },
+  { id: '4', name: txt.screens.investments, icon: 'investments', type: 'investments' },
 ];
 
 const INITIAL_TRANSACTIONS: Transaction[] = [];
@@ -42,8 +42,11 @@ const INITIAL_INVESTMENTS: Investment[] = [];
 const INITIAL_GOALS: Goal[] = [];
 
 export default function App() {
-  const { user, loading: authLoading, signOut, isAdmin, accessToken, signIn } = useAuth();
   const { theme, setTheme, bgEffect, setBgEffect, monoStyle, setMonoStyle } = useTheme();
+
+  // מצב פתיחת מסד הנתונים. עד שהוא פתוח אין מה להציג — כל הנתונים בו.
+  const [dbReady, setDbReady] = useState(false);
+  const [dbError, setDbError] = useState<string | null>(null);
   
   const [currency, setCurrency] = useState<Currency>(() => {
     return (localStorage.getItem('currency_preference') as Currency) || 'USD';
@@ -56,132 +59,57 @@ export default function App() {
     budgets: [],
     activeSheetId: '0',
     notes: '',
-    patchNotes: 'Wealth Horizon Terminal initialized. Secure uplink established.',
+    patchNotes: 'ברוך הבא. כל הנתונים שלך נשמרים על המכשיר הזה בלבד.',
   });
   // ... (the entire App contents remain here)
-  const [showAdminPortal, setShowAdminPortal] = useState(false);
-  const [portalTab, setPortalTab] = useState<'admin' | 'settings'>('settings');
-  const [showSettingsPortal, setShowSettingsPortal] = useState(false);
-  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(true);
-
-  useEffect(() => {
-    const checkStandalone = () => {
-      const isWindowStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      // @ts-ignore
-      const isIOSStandalone = window.navigator.standalone === true;
-      const standalone = isWindowStandalone || isIOSStandalone;
-      setIsStandalone(standalone);
-      
-      if (!standalone && !sessionStorage.getItem('installPromptShown')) {
-        setTimeout(() => {
-          setShowInstallModal(true);
-          sessionStorage.setItem('installPromptShown', 'true');
-        }, 1500);
-      }
-    };
-    checkStandalone();
-    
-    const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    mediaQuery.addEventListener('change', checkStandalone);
-    return () => mediaQuery.removeEventListener('change', checkStandalone);
-  }, []);
-  const [globalUpdate, setGlobalUpdate] = useState<{message: string, version: number}>({
-    message: 'System Online. Welcome to your financial command center.',
-    version: 9
-  });
-
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [feedbackText, setFeedbackText] = useState('');
-  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
-  const [feedbackSuccess, setFeedbackSuccess] = useState(false);
-  const [activeAlert, setActiveAlert] = useState<{message: string, id: string} | null>(null);
-  const [showAlertModal, setShowAlertModal] = useState(false);
-
-  const handleFeedbackSubmit = async () => {
-    if (!feedbackText.trim() || !user) return;
-    setIsSubmittingFeedback(true);
-    try {
-      await firestoreService.submitFeedback(user.uid, user.email || 'unknown', feedbackText);
-      setFeedbackText('');
-      setFeedbackSuccess(true);
-      setTimeout(() => {
-        setFeedbackSuccess(false);
-        setShowFeedbackModal(false);
-      }, 2000);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSubmittingFeedback(false);
-    }
-  };
-
   const sheets: Sheet[] = INITIAL_SHEETS;
 
+  // פותח את מסד הנתונים פעם אחת בעלייה. עד שזה מסתיים מוצג מסך טעינה.
   useEffect(() => {
-    if (isAdmin && user && !user.emailVerified) {
-      console.warn("ADMIN SECURITY WARNING: Your email is NOT verified in Firebase.");
-    }
-  }, [user, isAdmin]);
+    initStatusBar();
+    initDatabase()
+      .then(() => setDbReady(true))
+      .catch((e: unknown) => {
+        console.error('Failed to open the local database', e);
+        setDbError(e instanceof Error ? e.message : String(e));
+      })
+      // מסך הפתיחה יורד בין אם הצלחנו ובין אם לא — אחרת מסך השגיאה
+      // היה מוסתר מאחוריו והמשתמש היה רואה לוגו תקוע.
+      .finally(hideSplashScreen);
+  }, []);
 
-  // Load Data from Firestore on Login
+  // טעינת כל הנתונים מהמסד המקומי, פעם אחת אחרי שהוא נפתח.
   useEffect(() => {
-    if (user) {
-      const loadData = async () => {
-        setDataLoading(true);
-        try {
-          const remoteData = await firestoreService.fetchUserData(user.uid);
+    if (!dbReady) return;
+    const loadData = async () => {
+      setDataLoading(true);
+      try {
+        const remoteData = await repository.fetchUserData();
 
-          if (remoteData) {
-            setState(prev => ({
-              ...prev,
-              ...remoteData,
-              transactions: remoteData.transactions.length > 0 ? remoteData.transactions : prev.transactions,
-              accounts: remoteData.accounts.length > 0 ? remoteData.accounts : prev.accounts,
-              investments: remoteData.investments.length > 0 ? remoteData.investments : prev.investments,
-              goals: remoteData.goals.length > 0 ? remoteData.goals : prev.goals,
-              budgets: remoteData.budgets && remoteData.budgets.length > 0 ? remoteData.budgets : prev.budgets,
-              patchNotes: remoteData.patchNotes || prev.patchNotes
-            }));
-          }
-        } catch (e) {
-          console.error("Failed to sync from Firestore", e);
-        } finally {
-          setDataLoading(false);
-        }
-      };
-      loadData();
-
-      // Real-time listener for global system updates
-      const unsubscribeGlobal = firestoreService.subscribeToGlobalUpdate((update) => {
-        if (update) {
-          setGlobalUpdate(update);
+        if (remoteData) {
           setState(prev => ({
             ...prev,
-            patchNotes: update.message
+            activeSheetId: remoteData.profile.activeSheetId || prev.activeSheetId,
+            notes: remoteData.profile.notes ?? prev.notes,
+            reminders: remoteData.reminders,
+            transactions: remoteData.transactions.length > 0 ? remoteData.transactions : prev.transactions,
+            accounts: remoteData.accounts.length > 0 ? remoteData.accounts : prev.accounts,
+            investments: remoteData.investments.length > 0 ? remoteData.investments : prev.investments,
+            goals: remoteData.goals.length > 0 ? remoteData.goals : prev.goals,
+            budgets: remoteData.budgets.length > 0 ? remoteData.budgets : prev.budgets,
+            patchNotes: remoteData.profile.patchNotes || prev.patchNotes
           }));
         }
-      });
-
-      const unsubscribeAlerts = firestoreService.subscribeToGlobalAlert((alert) => {
-        if (alert) {
-          setActiveAlert(alert);
-          const seenAlerts = JSON.parse(localStorage.getItem('seen_alerts') || '[]');
-          if (!seenAlerts.includes(alert.id)) {
-            setShowAlertModal(true);
-            seenAlerts.push(alert.id);
-            localStorage.setItem('seen_alerts', JSON.stringify(seenAlerts));
-          }
-        }
-      });
-
-      return () => {
-        unsubscribeGlobal();
-        unsubscribeAlerts();
-      };
-    }
-  }, [user]);
+      } catch (e) {
+        console.error("Failed to load data from the local database", e);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    loadData();
+  }, [dbReady]);
 
   useEffect(() => {
     if (theme === 'mono') {
@@ -196,6 +124,12 @@ export default function App() {
     localStorage.setItem('financial_state', JSON.stringify(state));
   }, [state]);
 
+  // מפרסם את המצב לווידג'ט שעל מסך הבית. אותה תלות בדיוק כמו הגיבוי
+  // ל-localStorage: כל שינוי בנתונים מגיע לשניהם.
+  useEffect(() => {
+    if (dbReady) publishSnapshot(state, currency);
+  }, [state, currency, dbReady]);
+
   useEffect(() => {
     localStorage.setItem('currency_preference', currency);
   }, [currency]);
@@ -208,36 +142,8 @@ export default function App() {
 
   const activeSheet = sheets.find(s => s.id === state.activeSheetId);
 
-  // Simulate small real-time fluctuations for UI "liveliness"
-  useEffect(() => {
-    const simulatePriceMovement = () => {
-      setState(prev => {
-        let changed = false;
-        const updatedInvestments = prev.investments.map(inv => {
-          if (inv.currentPrice === 0) return inv;
-          // Tiny random variation +/- 0.1% for visual movement
-          const change = 1 + (Math.random() * 0.002 - 0.001);
-          const newPrice = Number((inv.currentPrice * change).toFixed(2));
-          
-          if (newPrice !== inv.currentPrice) {
-            changed = true;
-            return { ...inv, currentPrice: newPrice };
-          }
-          return inv;
-        });
-
-        if (changed) {
-          return { ...prev, investments: updatedInvestments };
-        }
-        return prev;
-      });
-    };
-
-    const interval = setInterval(simulatePriceMovement, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Background fetch for REAL market data
+  // משיכת מחירים אמיתיים ברקע. אין כאן שום סימולציה: מה שמוצג הוא
+  // המחיר האחרון שנמשך בפועל, ובלי רשת — האחרון שנשמר.
   useEffect(() => {
     const updateRealPrices = async () => {
       const tickers = state.investments
@@ -248,17 +154,9 @@ export default function App() {
       if (!tickers) return;
 
       try {
-        console.log(`[Sync] 30s Pulse Triggered: ${tickers}`);
-        const res = await fetch(`/api/prices?tickers=${encodeURIComponent(tickers)}`);
-        
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error(`[Sync] Server returned error (${res.status}):`, errorText.substring(0, 100));
-          return;
-        }
+        // נכשל בשקט ומחזיר מחירים מוטמנים כשאין רשת.
+        const data = await fetchPrices(tickers.split(','));
 
-        const data = await res.json();
-        
         if (data && typeof data === 'object') {
           setState(prev => {
             let hasChange = false;
@@ -287,65 +185,64 @@ export default function App() {
     return () => clearInterval(interval);
   }, [state.investments.length]); 
 
-  // Process scheduled reminders
+  /*
+   * תזכורות שהגיע זמנן.
+   *
+   * עד שלב 2 התזכורות נשלחו במייל דרך Gmail. זה נשען על טוקן Google
+   * שהגיע מההתחברות — וההתחברות ירדה יחד עם Firebase. לכן כאן נשארה
+   * רק ניהול המצב: תזכורת חד-פעמית מסומנת כטופלה כשעובר זמנה, ותזכורת
+   * חודשית מתגלגלת לחודש הבא. הרשימה עצמה מוצגת במסך הבית.
+   *
+   * התראה אמיתית על המסך תיכנס בשלב 4, כהתראת אנדרואיד מקומית.
+   */
   useEffect(() => {
-    const processReminders = async () => {
-      if (!user || !user.email) return;
+    const processReminders = () => {
       const reminders = state.reminders || [];
       const now = new Date();
-      
-      const pendingReminders = reminders.filter(r => !r.sent && new Date(r.scheduledTime) <= now);
-      
-      if (pendingReminders.length === 0) return;
-
-      if (!accessToken) {
-        console.warn("Reminders are due, but no Gmail access token is available.");
-        return;
-      }
+      const due = reminders.filter(r => !r.sent && new Date(r.scheduledTime) <= now);
+      if (due.length === 0) return;
 
       const updatedReminders = [...reminders];
-      let changed = false;
 
-      for (const reminder of pendingReminders) {
-        try {
-          await sendGmail(accessToken, user.email, reminder.subject, reminder.body || 'This is your scheduled reminder from Wealth Horizon.');
-          
-          // Update local state
-          const index = updatedReminders.findIndex(r => r.id === reminder.id);
-          if (index !== -1) {
-            if (reminder.recurrence === 'monthly' && reminder.dayOfMonth) {
-               const currentDate = new Date();
-               let nextMonth = currentDate.getMonth() + 1;
-               let nextYear = currentDate.getFullYear();
-               if (nextMonth > 11) {
-                 nextMonth = 0;
-                 nextYear++;
-               }
-               const originalDate = new Date(reminder.scheduledTime);
-               const nextDate = new Date(nextYear, nextMonth, reminder.dayOfMonth, originalDate.getHours(), originalDate.getMinutes());
-               updatedReminders[index] = { ...updatedReminders[index], scheduledTime: nextDate.toISOString() };
-            } else {
-               updatedReminders[index] = { ...updatedReminders[index], sent: true };
-            }
-            changed = true;
-            firestoreService.updateReminder(user.uid, updatedReminders[index]);
-          }
-          console.log(`Reminder sent: ${reminder.subject}`);
-        } catch (error) {
-          console.error(`Failed to send reminder ${reminder.id}`, error);
+      for (const reminder of due) {
+        const index = updatedReminders.findIndex(r => r.id === reminder.id);
+        if (index === -1) continue;
+
+        if (reminder.recurrence === 'monthly' && reminder.dayOfMonth) {
+          const originalDate = new Date(reminder.scheduledTime);
+          const next = new Date(originalDate);
+          // מתקדם חודש אחד קדימה מהמועד שנקבע, ולא מ"עכשיו", כדי
+          // שתזכורת שלא נפתחה כמה חודשים לא תדלג על החודשים שחלפו.
+          next.setMonth(next.getMonth() + 1);
+          next.setDate(reminder.dayOfMonth);
+          updatedReminders[index] = { ...updatedReminders[index], scheduledTime: next.toISOString() };
+        } else {
+          updatedReminders[index] = { ...updatedReminders[index], sent: true };
         }
+        repository.updateReminder(updatedReminders[index]);
       }
 
-      if (changed) {
-        setState(prev => ({ ...prev, reminders: updatedReminders }));
-      }
+      setState(prev => ({ ...prev, reminders: updatedReminders }));
     };
 
-    const interval = setInterval(processReminders, 10000);
-    processReminders(); // check immediately
+    const interval = setInterval(processReminders, 60000);
+    processReminders(); // בדיקה מיידית בעלייה
 
     return () => clearInterval(interval);
-  }, [state.reminders, accessToken, user]);
+  }, [state.reminders]);
+
+  /*
+   * כתיבות ל-Repository מול setState
+   * --------------------------------
+   * setState חייב להיות טהור — פונקציית העדכון רצה פעמיים ב-StrictMode.
+   * לכן ברוב ההנדלרים הכתיבה הוצאה החוצה, אחרי קריאת setState.
+   *
+   * בהנדלרים שמחשבים יתרות חשבון מתוך `prev` (עריכת תנועה, מחיקת תנועה,
+   * ושני הייבואים) הכתיבה נשארה בפנים בכוונה: קריאה מ-`prev` היא הדרך
+   * הנכונה לחשב מצב נגזר, ומעבר ל-`state` היה מסכן חישוב יתרות שגוי
+   * בלחיצות מהירות. הנזק מקריאה כפולה מנוטרל בכך שכל כתיבה היא upsert
+   * (ראה Repository.ts) — אותו מזהה, אותו תוכן, אותה תוצאה.
+   */
 
   // --- Transactions ---
   const handleUpdateTransaction = useCallback((id: string, field: keyof Transaction, value: any) => {
@@ -396,11 +293,9 @@ export default function App() {
       const updatedTransaction = { ...transaction, [field]: finalValue, accountId: finalAccountId };
       
       // Async sync
-      if (user) {
-        firestoreService.updateTransaction(user.uid, updatedTransaction);
-        // Also sync profile for consistency if needed, but here mostly accounts bit
-        nextAccounts.forEach(acc => firestoreService.updateAccount(user.uid, acc));
-      }
+      repository.updateTransaction(updatedTransaction);
+      // Also sync profile for consistency if needed, but here mostly accounts bit
+      nextAccounts.forEach(acc => repository.updateAccount(acc));
 
       return {
         ...prev,
@@ -408,30 +303,27 @@ export default function App() {
         transactions: prev.transactions.map(t => t.id === id ? updatedTransaction : t),
       };
     });
-  }, [user]);
+  }, []);
 
   const handleAddTransaction = useCallback((type: 'income' | 'expense') => {
-    setState(prev => {
-      const bankAcc = prev.accounts.find(a => a.id === 'bank-1') || prev.accounts[0];
-      
-      const newTransaction: Transaction = { 
-        id: Math.random().toString(36).substr(2, 9), 
-        date: new Date().toISOString().split('T')[0], 
-        description: '', 
-        category: type === 'income' ? 'Salary' : 'Food', 
-        amount: 0, 
-        type,
-        accountId: bankAcc?.id
-      };
-      
-      if (user) firestoreService.updateTransaction(user.uid, newTransaction);
+    const bankAcc = state.accounts.find(a => a.id === 'bank-1') || state.accounts[0];
 
-      return {
-        ...prev,
-        transactions: [newTransaction, ...prev.transactions],
-      };
-    });
-  }, [user]);
+    const newTransaction: Transaction = { 
+      id: Math.random().toString(36).substr(2, 9), 
+      date: new Date().toISOString().split('T')[0], 
+      description: '', 
+      category: type === 'income' ? 'Salary' : 'Food', 
+      amount: 0, 
+      type,
+      accountId: bankAcc?.id
+    };
+
+    setState(prev => ({
+      ...prev,
+      transactions: [newTransaction, ...prev.transactions],
+    }));
+    repository.addTransaction(newTransaction);
+  }, [state.accounts]);
 
   const handleDeleteTransaction = useCallback((id: string) => {
     setState(prev => {
@@ -446,10 +338,8 @@ export default function App() {
         });
       }
 
-      if (user) {
-        firestoreService.deleteTransaction(user.uid, id);
-        nextAccounts.forEach(acc => firestoreService.updateAccount(user.uid, acc));
-      }
+      repository.deleteTransaction(id);
+      nextAccounts.forEach(acc => repository.updateAccount(acc));
 
       return {
         ...prev,
@@ -457,46 +347,38 @@ export default function App() {
         transactions: prev.transactions.filter(t => t.id !== id)
       };
     });
-  }, [user]);
+  }, []);
 
   // --- Accounts ---
   const handleUpdateAccount = useCallback((id: string, field: keyof Account, value: any) => {
     setState(prev => {
       const updatedAccounts = prev.accounts.map(t => t.id === id ? { ...t, [field]: value } : t);
-      if (user) {
-        const acc = updatedAccounts.find(a => a.id === id);
-        if (acc) firestoreService.updateAccount(user.uid, acc);
-      }
+      const acc = updatedAccounts.find(a => a.id === id);
+      if (acc) repository.updateAccount(acc);
       return { ...prev, accounts: updatedAccounts };
     });
-  }, [user]);
+  }, []);
 
   const handleAddAccount = useCallback(() => {
-    setState(prev => {
-      const newAccount: Account = { id: Math.random().toString(36).substr(2, 9), name: '', type: 'Bank', balance: 0 };
-      if (user) firestoreService.updateAccount(user.uid, newAccount);
-      return { ...prev, accounts: [...prev.accounts, newAccount] };
-    });
-  }, [user]);
+    const newAccount: Account = { id: Math.random().toString(36).substr(2, 9), name: '', type: 'Bank', balance: 0 };
+    setState(prev => ({ ...prev, accounts: [...prev.accounts, newAccount] }));
+    repository.addAccount(newAccount);
+  }, []);
 
   const handleDeleteAccount = useCallback((id: string) => {
-    setState(prev => {
-      if (user) firestoreService.deleteAccount(user.uid, id);
-      return { ...prev, accounts: prev.accounts.filter(t => t.id !== id) };
-    });
-  }, [user]);
+    setState(prev => ({ ...prev, accounts: prev.accounts.filter(t => t.id !== id) }));
+    repository.deleteAccount(id);
+  }, []);
 
   // --- Investments ---
   const handleUpdateInvestment = useCallback((id: string, field: keyof Investment, value: any) => {
     setState(prev => {
       const updatedInvestments = prev.investments.map(t => t.id === id ? { ...t, [field]: value } : t);
-      if (user) {
-        const inv = updatedInvestments.find(i => i.id === id);
-        if (inv) firestoreService.updateInvestment(user.uid, inv);
-      }
+      const inv = updatedInvestments.find(i => i.id === id);
+      if (inv) repository.updateInvestment(inv);
       return { ...prev, investments: updatedInvestments };
     });
-  }, [user]);
+  }, []);
 
   const handleAddInvestment = useCallback(async (tickerData?: string | { ticker: string, name?: string, exchange?: string }) => {
     let ticker = '';
@@ -513,162 +395,100 @@ export default function App() {
 
     let currentPrice = 0;
     if (ticker) {
-      try {
-        const res = await fetch(`/api/prices?tickers=${ticker}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (data[ticker]) currentPrice = data[ticker];
-      } catch (e: any) {
-        if (String(e).includes('Failed to fetch') || e?.message === 'Failed to fetch' || e?.message?.includes('Failed to fetch') || e?.name === 'TypeError') {
-          console.warn("Pricing engine offline. Could not fetch initial price for", ticker);
-        } else {
-          console.error("Failed to fetch price for new investment", e);
-        }
-      }
+      const data = await fetchPrices([ticker]);
+      currentPrice = data[ticker] ?? 0;
     }
 
-    setState(prev => {
-      const newInvestment: Investment = { 
-        id: Math.random().toString(36).substr(2, 9), 
-        ticker: ticker || '', 
-        name: name || '',
-        exchange: exchange || '',
-        shares: 0, 
-        avgPrice: 0, 
-        currentPrice: currentPrice || 0 
-      };
-      if (user) firestoreService.updateInvestment(user.uid, newInvestment);
-      return { ...prev, investments: [...prev.investments, newInvestment] };
-    });
-  }, [user]);
+    const newInvestment: Investment = { 
+      id: Math.random().toString(36).substr(2, 9), 
+      ticker: ticker || '', 
+      name: name || '',
+      exchange: exchange || '',
+      shares: 0, 
+      avgPrice: 0, 
+      currentPrice: currentPrice || 0 
+    };
+    setState(prev => ({ ...prev, investments: [...prev.investments, newInvestment] }));
+    repository.addInvestment(newInvestment);
+  }, []);
 
   const handleDeleteInvestment = useCallback((id: string) => {
-    setState(prev => {
-      if (user) firestoreService.deleteInvestment(user.uid, id);
-      return { ...prev, investments: prev.investments.filter(t => t.id !== id) };
-    });
-  }, [user]);
+    setState(prev => ({ ...prev, investments: prev.investments.filter(t => t.id !== id) }));
+    repository.deleteInvestment(id);
+  }, []);
 
 const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any) => {
     setState(prev => {
       const updatedGoals = prev.goals.map(t => t.id === id ? { ...t, [field]: value } : t);
-      if (user) {
-        const goal = updatedGoals.find(g => g.id === id);
-        if (goal) firestoreService.updateGoal(user.uid, goal);
-      }
+      const goal = updatedGoals.find(g => g.id === id);
+      if (goal) repository.updateGoal(goal);
       return { ...prev, goals: updatedGoals };
     });
-  }, [user]);
+  }, []);
 
   const handleAddGoal = useCallback(() => {
-    setState(prev => {
-      const newGoal: Goal = { id: Math.random().toString(36).substr(2, 9), name: '', targetAmount: 0, currentAmount: 0, category: 'Savings' };
-      if (user) firestoreService.updateGoal(user.uid, newGoal);
-      return { ...prev, goals: [...prev.goals, newGoal] };
-    });
-  }, [user]);
+    const newGoal: Goal = { id: Math.random().toString(36).substr(2, 9), name: '', targetAmount: 0, currentAmount: 0, category: 'Savings' };
+    setState(prev => ({ ...prev, goals: [...prev.goals, newGoal] }));
+    repository.addGoal(newGoal);
+  }, []);
 
   const handleDeleteGoal = useCallback((id: string) => {
-    setState(prev => {
-      if (user) firestoreService.deleteGoal(user.uid, id);
-      return { ...prev, goals: prev.goals.filter(t => t.id !== id) };
-    });
-  }, [user]);
+    setState(prev => ({ ...prev, goals: prev.goals.filter(t => t.id !== id) }));
+    repository.deleteGoal(id);
+  }, []);
 
   const handleUpdateBudget = useCallback((id: string, field: keyof Budget, value: any) => {
     setState(prev => {
       const updatedBudgets = prev.budgets.map(b => b.id === id ? { ...b, [field]: value } : b);
-      if (user) {
-        const budget = updatedBudgets.find(b => b.id === id);
-        if (budget) firestoreService.updateBudget(user.uid, budget);
-      }
+      const budget = updatedBudgets.find(b => b.id === id);
+      if (budget) repository.updateBudget(budget);
       return { ...prev, budgets: updatedBudgets };
     });
-  }, [user]);
+  }, []);
 
   const handleAddBudget = useCallback((category: string, limit: number) => {
-    setState(prev => {
-      const newBudget: Budget = {
-        id: Math.random().toString(36).substr(2, 9),
-        category,
-        limit
-      };
-      if (user) firestoreService.updateBudget(user.uid, newBudget);
-      return { ...prev, budgets: [...prev.budgets, newBudget] };
-    });
-  }, [user]);
+    const newBudget: Budget = {
+      id: Math.random().toString(36).substr(2, 9),
+      category,
+      limit
+    };
+    setState(prev => ({ ...prev, budgets: [...prev.budgets, newBudget] }));
+    repository.addBudget(newBudget);
+  }, []);
 
   const handleDeleteBudget = useCallback((id: string) => {
-    setState(prev => {
-      if (user) firestoreService.deleteBudget(user.uid, id);
-      return { ...prev, budgets: prev.budgets.filter(b => b.id !== id) };
-    });
-  }, [user]);
+    setState(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== id) }));
+    repository.deleteBudget(id);
+  }, []);
 
   const handleAddReminder = useCallback((subject: string, body: string, scheduledTime: string, recurrence?: 'monthly', dayOfMonth?: number) => {
-    setState(prev => {
-      const newReminder = {
-        id: Math.random().toString(36).substr(2, 9),
-        subject,
-        body,
-        scheduledTime,
-        sent: false,
-        recurrence,
-        dayOfMonth
-      };
-      if (user) firestoreService.updateReminder(user.uid, newReminder);
-      return { ...prev, reminders: [...(prev.reminders || []), newReminder] };
-    });
-  }, [user]);
+    const newReminder = {
+      id: Math.random().toString(36).substr(2, 9),
+      subject,
+      body,
+      scheduledTime,
+      sent: false,
+      recurrence,
+      dayOfMonth
+    };
+    setState(prev => ({ ...prev, reminders: [...(prev.reminders || []), newReminder] }));
+    repository.addReminder(newReminder);
+  }, []);
 
   const handleDeleteReminder = useCallback((id: string) => {
-    setState(prev => {
-      if (user) firestoreService.deleteReminder(user.uid, id);
-      return { ...prev, reminders: (prev.reminders || []).filter(r => r.id !== id) };
-    });
-  }, [user]);
+    setState(prev => ({ ...prev, reminders: (prev.reminders || []).filter(r => r.id !== id) }));
+    repository.deleteReminder(id);
+  }, []);
 
   const handleUpdateNotes = useCallback((notes: string) => {
-    setState(prev => {
-      if (user) firestoreService.saveUserProfile(user.uid, { notes });
-      return { ...prev, notes };
-    });
-  }, [user]);
+    setState(prev => ({ ...prev, notes }));
+    repository.saveUserProfile({ notes });
+  }, []);
 
   const handleUpdatePatchNotes = useCallback((patchNotes: string) => {
-    setState(prev => {
-      if (user) {
-        firestoreService.saveUserProfile(user.uid, { patchNotes });
-      }
-      return { ...prev, patchNotes };
-    });
-  }, [user]);
-
-  const handleBroadcastUpdate = useCallback(async (message: string) => {
-    console.log("App.tsx: handleBroadcastUpdate triggered with message:", message);
-    if (!isAdmin) {
-      console.warn("App.tsx: Broadcast attempted but user is not admin.");
-      return;
-    }
-    try {
-      const nextVersion = globalUpdate.version + 1;
-      console.log(`App.tsx: Broadcasting version v1.${nextVersion}...`);
-      await firestoreService.saveGlobalSystemUpdate(message, nextVersion);
-      console.log("App.tsx: Global update saved to Firestore.");
-      
-      const versionedMsg = message;
-      setGlobalUpdate({ message, version: nextVersion });
-      setState(s => ({ ...s, patchNotes: versionedMsg }));
-      
-      if (user) {
-        await firestoreService.saveUserProfile(user.uid, { patchNotes: versionedMsg });
-        console.log("App.tsx: User profile patch notes updated.");
-      }
-    } catch (error: any) {
-      console.error("App.tsx: Broadcast failed:", error);
-      alert(`Broadcast failed: ${error.message || error}`);
-    }
-  }, [isAdmin, globalUpdate.version, user]);
+    setState(prev => ({ ...prev, patchNotes }));
+    repository.saveUserProfile({ patchNotes });
+  }, []);
 
   const handleImportTransactions = useCallback((newTransactions: Transaction[]) => {
     setState(prev => {
@@ -692,10 +512,8 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
         }
       });
 
-      if (user) {
-        newTransactions.forEach(t => firestoreService.updateTransaction(user.uid, t));
-        nextAccounts.forEach(acc => firestoreService.updateAccount(user.uid, acc));
-      }
+      repository.saveTransactions(newTransactions);
+      repository.saveAccounts(nextAccounts);
 
       return {
         ...prev,
@@ -703,95 +521,87 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
         transactions: [...newTransactions, ...prev.transactions],
       };
     });
-  }, [user]);
+  }, []);
 
   const handleImportState = useCallback((imported: SpreadsheetState) => {
     setState(prev => {
-      if (user) {
-        // Bulk save
-        firestoreService.saveUserProfile(user.uid, { 
-          notes: imported.notes, 
-          patchNotes: imported.patchNotes, 
-          activeSheetId: prev.activeSheetId 
-        });
-        imported.transactions.forEach(t => firestoreService.updateTransaction(user.uid, t));
-        imported.accounts.forEach(a => firestoreService.updateAccount(user.uid, a));
-        imported.investments.forEach(i => firestoreService.updateInvestment(user.uid, i));
-        imported.goals.forEach(g => firestoreService.updateGoal(user.uid, g));
-      }
+      // Bulk save
+      repository.saveUserProfile({ 
+        notes: imported.notes, 
+        patchNotes: imported.patchNotes, 
+        activeSheetId: prev.activeSheetId 
+      });
+      repository.saveTransactions(imported.transactions);
+      repository.saveAccounts(imported.accounts);
+      repository.saveInvestments(imported.investments);
+      repository.saveGoals(imported.goals);
+      repository.saveBudgets(imported.budgets || []);
       return {
         ...prev,
         ...imported,
         activeSheetId: prev.activeSheetId // Keep current view
       };
     });
-  }, [user]);
+  }, []);
 
   const navigateToSheet = useCallback((type: string) => {
     const sheet = INITIAL_SHEETS.find(s => s.type === type);
     if (sheet) {
       setState(prev => ({ ...prev, activeSheetId: sheet.id }));
-      if (user) firestoreService.saveUserProfile(user.uid, { activeSheetId: sheet.id });
+      repository.saveUserProfile({ activeSheetId: sheet.id });
     }
-  }, [user]);
+  }, []);
+
+  /*
+   * כפתור "חזור" של אנדרואיד.
+   *
+   * ברירת המחדל של WebView היא לסגור את האפליקציה בלחיצה אחת, וזה
+   * מרגיש שבור. במקום זה: סוגר מודל פתוח, אחרת חוזר למסך הבית, ורק
+   * מהבית מעביר את האפליקציה לרקע (לא סוגר אותה).
+   *
+   * ה-ref קיים כי המאזין נרשם פעם אחת, ובלעדיו הוא היה רואה לנצח
+   * את המצב מהרינדור הראשון.
+   */
+  const backStateRef = useRef({ activeSheetId: state.activeSheetId, showSettingsModal });
+  backStateRef.current = { activeSheetId: state.activeSheetId, showSettingsModal };
+
+  useEffect(() => {
+    return onAndroidBack(() => {
+      const current = backStateRef.current;
+
+      if (current.showSettingsModal) {
+        setShowSettingsModal(false);
+        return true;
+      }
+      if (current.activeSheetId !== '0') {
+        setState(prev => ({ ...prev, activeSheetId: '0' }));
+        repository.saveUserProfile({ activeSheetId: '0' });
+        return true;
+      }
+      return false; // מהבית — לרקע
+    });
+  }, []);
 
   const mainScrollRef = useRef<HTMLElement>(null);
 
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then((registration) => {
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-      }, (err) => {
-        console.log('ServiceWorker registration failed: ', err);
-      });
-    }
-
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      console.log('Install prompt captured');
-      
-      if (!sessionStorage.getItem('installPromptShown')) {
-        setShowInstallModal(true);
-        sessionStorage.setItem('installPromptShown', 'true');
-      }
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallApp = async () => {
-    console.log("Install button clicked, deferredPrompt:", deferredPrompt);
-    if (!deferredPrompt) {
-      setShowInstallModal(true);
-      return;
-    }
-    console.log("Calling deferredPrompt.prompt()");
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log("Prompt outcome:", outcome);
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-    }
-  };
-
-  if (authLoading) {
+  if (dbError) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 gap-4">
-        <Loader2 className="w-12 h-12 text-pink-500 animate-spin" />
-        <p className="horizon-title text-xs text-zinc-500 tracking-[0.2em] opacity-50">Initializing Wealth Engine...</p>
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 gap-4 p-8 text-center">
+        <AlertTriangle className="w-12 h-12 text-rose-500" />
+        <p className="horizon-title text-sm text-zinc-300 tracking-[0.2em]">{txt.boot.failedTitle}</p>
+        <p className="text-xs text-zinc-500 font-mono max-w-md break-words" dir="ltr">{dbError}</p>
+        <p className="text-[10px] text-zinc-600 max-w-md">{txt.boot.failedHint}</p>
       </div>
     );
   }
 
-  if (!user) {
-    return <Login />;
+  if (!dbReady) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 gap-4">
+        <Loader2 className="w-12 h-12 text-pink-500 animate-spin" />
+        <p className="horizon-title text-xs text-zinc-500 tracking-[0.2em] opacity-50">{txt.boot.opening}</p>
+      </div>
+    );
   }
 
   return (
@@ -802,21 +612,10 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
           activeSheetId={state.activeSheetId}
           onSelectSheet={(id) => {
             setState(prev => ({ ...prev, activeSheetId: id }));
-            if (user) firestoreService.saveUserProfile(user.uid, { activeSheetId: id });
+            repository.saveUserProfile({ activeSheetId: id });
           }}
-          user={user}
-          onLogout={signOut}
           currency={currency}
-          isAdmin={isAdmin}
-          onShowAdmin={() => {
-            setPortalTab(isAdmin ? 'admin' : 'settings');
-            setShowAdminPortal(true);
-          }}
-          onShowSettings={() => {
-            setPortalTab('settings');
-            setShowAdminPortal(true);
-          }}
-          onInstall={handleInstallApp}
+          onShowSettings={() => setShowSettingsModal(true)}
         />
 
       <div className="flex flex-col flex-1 min-w-0">
@@ -826,7 +625,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
 
         <div className="hidden md:flex h-16 bg-zinc-900/50 backdrop-blur-md border-b border-white/5 items-center justify-between px-8 shrink-0 z-10 relative">
           <div className="flex items-center gap-3">
-            <h1 className="horizon-title text-xl text-zinc-100 border-l-2 border-pink-500 pl-4">
+            <h1 className="horizon-title text-xl text-zinc-100 border-s-2 border-pink-500 ps-4">
               {activeSheet ? activeSheet.name : "Wealth Horizon"}
             </h1>
             <div className="h-1 w-8 rounded-full bg-gradient-to-r from-pink-500/40 to-transparent" />
@@ -844,16 +643,10 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
                 currency={currency} 
                 patchNotes={state.patchNotes}
                 onUpdatePatchNotes={handleUpdatePatchNotes}
-                onBroadcastUpdate={handleBroadcastUpdate}
                 onImportState={handleImportState}
                 onNavigate={navigateToSheet} 
-                isAdmin={isAdmin}
-                onInstall={handleInstallApp}
-                showInstallButton={true}
-                onAddReminder={handleAddReminder}
+                      onAddReminder={handleAddReminder}
                 onDeleteReminder={handleDeleteReminder}
-                accessToken={accessToken}
-                onRequiresAuth={signIn}
               />
             )}
 
@@ -867,6 +660,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
               onAddTransaction={handleAddTransaction}
               onDeleteTransaction={handleDeleteTransaction}
               onImportTransactions={handleImportTransactions}
+              allTransactions={state.transactions}
               currency={currency}
             />
           )}
@@ -881,6 +675,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
               onAddTransaction={handleAddTransaction}
               onDeleteTransaction={handleDeleteTransaction}
               onImportTransactions={handleImportTransactions}
+              allTransactions={state.transactions}
               currency={currency}
             />
           )}
@@ -935,30 +730,20 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
           activeSheetId={state.activeSheetId}
           onSelectSheet={(id) => {
             setState(prev => ({ ...prev, activeSheetId: id }));
-            if (user) firestoreService.saveUserProfile(user.uid, { activeSheetId: id });
+            repository.saveUserProfile({ activeSheetId: id });
           }}
-          isAdmin={isAdmin}
-          onShowAdmin={() => {
-            setPortalTab(isAdmin ? 'admin' : 'settings');
-            setShowAdminPortal(true);
-          }}
+          onShowSettings={() => setShowSettingsModal(true)}
         />
       </div>
 
       <AnimatePresence>
-        {showInstallModal && (
-          <InstallModal onClose={() => setShowInstallModal(false)} />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showAdminPortal && (
+        {showSettingsModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8 md:p-12">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowAdminPortal(false)}
+              onClick={() => setShowSettingsModal(false)}
               className="absolute inset-0 bg-zinc-950/90 backdrop-blur-md"
             />
             <motion.div 
@@ -967,35 +752,13 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               className="relative w-full max-w-7xl h-full max-h-[90vh] glass-card rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col bg-zinc-900/50"
             >
-              {/* Header Tab Switcher (Visible only if Admin) */}
-              {isAdmin ? (
-                <div className="flex items-center gap-6 px-12 pt-8 border-b border-white/5 shrink-0 relative">
-                  <button
-                    onClick={() => setPortalTab('admin')}
-                    className={`text-xs font-black uppercase tracking-[0.2em] pb-4 border-b-2 transition-all cursor-pointer ${
-                      portalTab === 'admin' ? 'border-pink-500 text-pink-400 font-extrabold' : 'border-transparent text-zinc-500 hover:text-zinc-350'
-                    }`}
-                  >
-                    System Control
-                  </button>
-                  <button
-                    onClick={() => setPortalTab('settings')}
-                    className={`text-xs font-black uppercase tracking-[0.2em] pb-4 border-b-2 transition-all cursor-pointer ${
-                      portalTab === 'settings' ? 'border-pink-500 text-pink-400 font-extrabold' : 'border-transparent text-zinc-500 hover:text-zinc-350'
-                    }`}
-                  >
-                    User Preferences
-                  </button>
-                </div>
-              ) : (
-                <div className="px-12 pt-8 border-b border-white/5 pb-4 shrink-0">
-                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">Settings Console</h2>
-                </div>
-              )}
+              <div className="px-12 pt-8 border-b border-white/5 pb-4 shrink-0">
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">{txt.settings.title}</h2>
+              </div>
 
-              <div className="absolute top-6 right-6 z-10 flex items-center gap-2">
+              <div className="absolute top-6 end-6 z-10 flex items-center gap-2">
                 <button 
-                  onClick={() => setShowAdminPortal(false)}
+                  onClick={() => setShowSettingsModal(false)}
                   className="p-3 rounded-2xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all pointer-events-auto"
                 >
                   <LogOut className="h-5 w-5 rotate-180" />
@@ -1003,10 +766,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
               </div>
 
               <div className="flex-1 overflow-y-auto w-full px-4 md:px-12 pt-12 pb-32 relative z-0">
-                {portalTab === 'admin' && isAdmin ? (
-                  <AdminConsole currency={currency as any} globalUpdate={globalUpdate} />
-                ) : (
-                  <Settings
+                <Settings
                     theme={theme}
                     onSetTheme={setTheme}
                     bgEffect={bgEffect}
@@ -1015,49 +775,27 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
                     onSetMonoStyle={setMonoStyle}
                     currency={currency}
                     onSetCurrency={setCurrency}
-                    user={user}
-                    isAdmin={isAdmin}
                     state={state}
                     onImportState={handleImportState}
+                    onAddReminder={handleAddReminder}
+                    onDeleteReminder={handleDeleteReminder}
                     onResetData={async () => {
                       const defaultAccounts: Account[] = [
-                        { id: 'bank-1', name: 'Main Checking', type: 'Bank', balance: 0 },
-                        { id: 'inv-1', name: 'Investment Account', type: 'Investment', balance: 0 }
+                        { id: 'bank-1', name: 'עובר ושב', type: 'Bank', balance: 0 },
+                        { id: 'inv-1', name: 'חשבון השקעות', type: 'Investment', balance: 0 }
                       ];
                       
-                      if (user) {
-                        try {
-                          await firestoreService.saveUserProfile(user.uid, { 
-                            notes: '', 
-                            patchNotes: state.patchNotes 
-                          });
-
-                          const deletePromises: Promise<any>[] = [];
-                          state.transactions.forEach(t => {
-                            deletePromises.push(firestoreService.deleteTransaction(user.uid, t.id));
-                          });
-                          state.budgets.forEach(b => {
-                            deletePromises.push(firestoreService.deleteBudget(user.uid, b.id));
-                          });
-                          state.goals.forEach(g => {
-                            deletePromises.push(firestoreService.deleteGoal(user.uid, g.id));
-                          });
-                          state.accounts.forEach(a => {
-                            deletePromises.push(firestoreService.deleteAccount(user.uid, a.id));
-                          });
-                          state.investments.forEach(i => {
-                            deletePromises.push(firestoreService.deleteInvestment(user.uid, i.id));
-                          });
-                          
-                          await Promise.all(deletePromises);
-
-                          const accountPromises = defaultAccounts.map(a => 
-                            firestoreService.updateAccount(user.uid, a)
-                          );
-                          await Promise.all(accountPromises);
-                        } catch (err) {
-                          console.error("Error clearing cloud data:", err);
-                        }
+                      try {
+                        // מוחק הכל — כולל תזכורות והפרופיל — ואז כותב
+                        // מחדש את חשבונות ברירת המחדל.
+                        await wipeEverything();
+                        await repository.saveAccounts(defaultAccounts);
+                        await repository.saveUserProfile({
+                          notes: '',
+                          patchNotes: state.patchNotes,
+                        });
+                      } catch (err) {
+                        console.error("Error clearing local data:", err);
                       }
 
                       setState(prev => {
@@ -1068,6 +806,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
                           investments: [],
                           budgets: [],
                           goals: [],
+                          reminders: [],
                           notes: '',
                           patchNotes: prev.patchNotes
                         };
@@ -1076,111 +815,9 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
                       });
                     }}
                   />
-                )}
               </div>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
-
-      {/* Global In-App Feedback Button */}
-      <button 
-        onClick={() => setShowFeedbackModal(!showFeedbackModal)}
-        className="fixed bottom-24 md:bottom-8 right-6 z-[60] p-4 bg-pink-600/90 text-white rounded-full shadow-lg shadow-pink-500/50 hover:bg-pink-500 transition-all active:scale-95 border border-white/10 glass-card"
-      >
-        <MessageSquare className="h-6 w-6" />
-      </button>
-
-      <AnimatePresence>
-        {showFeedbackModal && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="fixed bottom-[140px] md:bottom-24 right-6 w-80 sm:w-96 glass-card rounded-[2rem] p-6 border-white/10 shadow-2xl z-[60] bg-zinc-900/90 backdrop-blur-3xl flex flex-col"
-          >
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
-              <h3 className="text-zinc-100 font-extrabold text-sm uppercase tracking-widest flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-pink-400" />
-                Submit Feedback
-              </h3>
-              <button 
-                onClick={() => setShowFeedbackModal(false)}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            {feedbackSuccess ? (
-              <div className="flex flex-col items-center justify-center py-8 text-emerald-400 animate-in fade-in zoom-in duration-300">
-                <div className="bg-emerald-500/10 p-3 rounded-full mb-3">
-                  <Check className="h-8 w-8 text-emerald-400" />
-                </div>
-                <p className="font-extrabold uppercase tracking-widest text-[10px]">Feedback Received</p>
-                <p className="text-zinc-500 text-[10px] mt-1 text-center font-mono">Thank you! Our devs have been notified.</p>
-              </div>
-            ) : (
-             <>
-              <textarea 
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder="Report bugs or suggest features..."
-                className="w-full h-32 bg-zinc-950/50 border border-white/5 rounded-2xl p-4 text-zinc-300 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/30 focus:ring-1 focus:ring-pink-500/30 transition-all resize-none"
-              />
-
-              <button 
-                onClick={handleFeedbackSubmit}
-                disabled={isSubmittingFeedback || !feedbackText.trim()}
-                className="mt-4 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] hover:brightness-110 active:scale-95 transition-all shadow-md shadow-pink-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmittingFeedback ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Send className="h-4 w-4" /> 
-                    Send to Dev Team
-                  </>
-                )}
-              </button>
-             </>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showAlertModal && activeAlert && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md"
-            onClick={() => setShowAlertModal(false)}
-          >
-            <motion.div 
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="bg-black border border-violet-500/30 rounded-3xl p-8 w-full max-w-lg shadow-2xl shadow-violet-500/20 flex flex-col items-center text-center space-y-6 relative overflow-hidden"
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-violet-500/10 to-transparent pointer-events-none" />
-              <div className="h-16 w-16 bg-violet-500/20 rounded-full flex items-center justify-center mb-2 border border-violet-500/30">
-                <Globe className="h-8 w-8 text-violet-400" />
-              </div>
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mix-blend-screen relative z-10">Global Alert</h2>
-              <div className="text-zinc-300 font-medium relative z-10 leading-relaxed whitespace-pre-wrap">
-                {activeAlert.message}
-              </div>
-              <button
-                onClick={() => setShowAlertModal(false)}
-                className="w-full mt-4 py-4 bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-widest text-xs rounded-2xl transition-all shadow-lg shadow-violet-900/40 relative z-10"
-              >
-                Acknowledge
-              </button>
-            </motion.div>
-          </motion.div>
         )}
       </AnimatePresence>
 

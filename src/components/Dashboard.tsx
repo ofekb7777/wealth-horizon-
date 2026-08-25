@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { txt, categoryLabel } from '../i18n/he';
 import {
   BarChart,
   Bar,
@@ -138,8 +139,8 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
       assetAllocation,
       investmentPerformance,
       barData: [
-        { name: 'Income', amount: totalIncome },
-        { name: 'Expenses', amount: totalExpenses },
+        { name: txt.analytics.seriesIncome, amount: totalIncome },
+        { name: txt.analytics.seriesExpenses, amount: totalExpenses },
       ]
     };
   }, [transactions, accounts, investments, timeframe]);
@@ -151,17 +152,17 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-4xl font-extrabold font-display text-zinc-100 tracking-tight">
-                Terminal <span className="gradient-text italic">Analytics</span>
+                <span className="gradient-text italic">{txt.analytics.title}</span>
               </h2>
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-[0.2em]">System Status: Active // Multi-Core</p>
+              <p className="text-xs font-medium text-zinc-500 uppercase tracking-[0.2em]">{txt.analytics.liveStatus}</p>
             </div>
             
               <div className="hidden xl:flex items-center gap-6 glass-card px-6 py-3 rounded-2xl">
               <div className="flex items-center gap-2">
                 <Activity className="h-3 w-3 text-pink-500 animate-pulse" />
-                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none italic">Live Protocol</span>
+                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none italic">{txt.analytics.subtitle}</span>
               </div>
-              <div className="flex gap-6 border-l border-white/5 pl-6">
+              <div className="flex gap-6 border-s border-white/5 ps-6">
                 {(investments || []).slice(0, 3).map(inv => (
                    <div 
                       key={inv.id} 
@@ -181,11 +182,11 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
           <div className="flex flex-col md:flex-row gap-4 w-full">
             <div className="flex bg-zinc-900/50 p-1 rounded-2xl border border-white/5 text-[10px] font-black overflow-x-auto hide-scrollbar shrink-0">
               {[
-                { id: '1m', label: '1 month' },
-                { id: '3m', label: '3 months' },
-                { id: '6m', label: '6 months' },
-                { id: '1y', label: '1 year' },
-                { id: 'all', label: 'MAX' }
+                { id: '1m', label: txt.analytics.range1m },
+                { id: '3m', label: txt.analytics.range3m },
+                { id: '6m', label: txt.analytics.range6m },
+                { id: '1y', label: txt.analytics.range1y },
+                { id: 'all', label: txt.analytics.rangeAll }
               ].map(tf => (
                 <button
                   key={tf.id}
@@ -203,21 +204,21 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
               className={`flex items-center justify-center gap-2 px-6 py-2.5 flex-1 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'overview' ? 'bg-pink-500 text-zinc-950 shadow-lg' : 'text-zinc-500 hover:text-white'}`}
             >
               <BarChart3 className="h-4 w-4" />
-              Overview
+              {txt.analytics.tabOverview}
             </button>
             <button
               onClick={() => setActiveTab('goals')}
               className={`flex items-center justify-center gap-2 px-6 py-2.5 flex-1 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'goals' ? 'bg-pink-500 text-zinc-950 shadow-lg' : 'text-zinc-500 hover:text-white'}`}
             >
               <GoalIcon className="h-4 w-4" />
-              Objectives
+              {txt.analytics.tabGoals}
             </button>
             <button
               onClick={() => setActiveTab('advisor')}
               className={`flex items-center justify-center gap-2 px-6 py-2.5 flex-1 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'advisor' ? 'bg-pink-500 text-zinc-950 shadow-lg' : 'text-zinc-500 hover:text-white'}`}
             >
               <Cpu className="h-4 w-4" />
-              Advisor
+              {txt.analytics.tabAdvisor}
             </button>
           </div>
         </div>
@@ -240,11 +241,11 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                     <div className="p-2 rounded-lg bg-pink-500/10 text-pink-400">
                       <BarChart3 className="h-4 w-4" />
                     </div>
-                    <span className="text-[10px] uppercase font-black tracking-[0.3em]">Capital Velocity</span>
+                    <span className="text-[10px] uppercase font-black tracking-[0.3em]">{txt.analytics.cashFlow}</span>
                   </div>
                   <div className="p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 bg-zinc-900/40 backdrop-blur-3xl h-auto md:h-[240px] flex flex-col justify-center relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 w-48 h-48 bg-pink-500/10 blur-[80px] rounded-full -mr-20 -mt-20 group-hover:bg-pink-500/20 transition-all duration-700" />
-                     <div className="text-[10px] uppercase font-black tracking-[0.4em] text-zinc-500 mb-2 md:mb-4">Cumulative Liquidity</div>
+                     <div className="absolute top-0 right-0 w-48 h-48 bg-pink-500/10 blur-[80px] rounded-full -me-20 -mt-20 group-hover:bg-pink-500/20 transition-all duration-700" />
+                     <div className="text-[10px] uppercase font-black tracking-[0.4em] text-zinc-500 mb-2 md:mb-4">{txt.home.cashAssets}</div>
                      <div className="text-4xl md:text-6xl font-black text-zinc-100 font-mono tracking-tighter mb-4 md:mb-8 leading-none italic">
                        {summaryData.totalNetWorth > 0 ? '+' : ''}{symbol}{(summaryData.totalNetWorth * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                      </div>
@@ -252,7 +253,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                         <div className="h-2 flex-1 bg-white/5 rounded-full overflow-hidden shadow-inner">
                            <div className="h-full bg-linear-to-r from-pink-500 to-orange-400 w-3/4 animate-pulse-slow" />
                         </div>
-                        <span className="text-[10px] font-black font-mono text-pink-500 tracking-widest whitespace-nowrap italic">STATUS: OPTIMIZED</span>
+                        <span className="text-[10px] font-black font-mono text-pink-500 tracking-widest whitespace-nowrap italic">{txt.analytics.positiveNet}</span>
                      </div>
                   </div>
                 </div>
@@ -262,11 +263,11 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                     <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
                       <Cpu className="h-4 w-4" />
                     </div>
-                    <span className="text-[10px] uppercase font-black tracking-[0.3em]">Neural Delta</span>
+                    <span className="text-[10px] uppercase font-black tracking-[0.3em]">{txt.home.monthlyFlow}</span>
                   </div>
                   <div className="p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 bg-zinc-900/40 backdrop-blur-3xl h-auto md:h-[240px] flex flex-col justify-center relative overflow-hidden group">
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/5 blur-[50px] rounded-full" />
-                    <div className="text-[10px] uppercase font-black tracking-[0.3em] text-zinc-500 mb-3">Retained Capital</div>
+                    <div className="text-[10px] uppercase font-black tracking-[0.3em] text-zinc-500 mb-3">{txt.home.savingsRate}</div>
                     <div className="text-2xl md:text-4xl font-black text-zinc-100 font-mono tracking-widest">
                       {summaryData.totalIncome > summaryData.totalExpenses ? '+' : ''}{symbol}{((summaryData.totalIncome - summaryData.totalExpenses) * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
@@ -287,7 +288,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="group relative p-6 rounded-2xl border border-white/5 bg-white/[0.03] backdrop-blur-xl overflow-hidden transition-all hover:border-white/20 hover:bg-white/[0.05]">
                   <div className="absolute top-0 right-0 p-2 opacity-50"><div className="h-2 w-2 rounded-full bg-cyan-400 blur-[2px]" /></div>
-                  <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 mb-3 group-hover:text-cyan-400 transition-colors">Net Worth</div>
+                  <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 mb-3 group-hover:text-cyan-400 transition-colors">{txt.home.netWorth}</div>
                   <div className="text-3xl font-black text-white/90 font-mono tracking-tighter">
                     {symbol}{(summaryData.totalNetWorth * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
@@ -298,19 +299,19 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
 
                 <div className="group relative p-6 rounded-2xl border border-white/5 bg-white/[0.03] backdrop-blur-xl overflow-hidden transition-all hover:border-white/20 hover:bg-white/[0.05]">
                   <div className="absolute top-0 right-0 p-2 opacity-50"><div className="h-2 w-2 rounded-full bg-emerald-400 blur-[2px]" /></div>
-                  <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 mb-3 group-hover:text-emerald-400 transition-colors">Cash Flow</div>
+                  <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 mb-3 group-hover:text-emerald-400 transition-colors">{txt.analytics.cashFlow}</div>
                   <div className={`text-3xl font-black font-mono tracking-tighter ${summaryData.totalIncome - summaryData.totalExpenses >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {symbol}{((summaryData.totalIncome - summaryData.totalExpenses) * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <div className="mt-3 flex items-center justify-between text-[9px] font-bold text-white/20 uppercase tracking-widest">
-                    <span>Performance Meter</span>
-                    <span className="text-emerald-400/50">Optimal</span>
+                    <span>{txt.home.savingsRate}</span>
+                    <span className="text-emerald-400/50">{txt.budgets.optimal}</span>
                   </div>
                 </div>
 
                 <div className="group relative p-6 rounded-2xl border border-white/5 bg-white/[0.03] backdrop-blur-xl overflow-hidden transition-all hover:border-white/20 hover:bg-white/[0.05]">
                   <div className="absolute top-0 right-0 p-2 opacity-50"><div className="h-2 w-2 rounded-full bg-purple-400 blur-[2px]" /></div>
-                  <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 mb-3 group-hover:text-purple-400 transition-colors">Savings Rate</div>
+                  <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 mb-3 group-hover:text-purple-400 transition-colors">{txt.home.savingsRate}</div>
                   <div className="text-3xl font-light text-purple-400 font-mono tracking-tighter">
                     {summaryData.totalIncome > 0 ? ((summaryData.totalIncome - summaryData.totalExpenses) / summaryData.totalIncome * 100).toFixed(1) : 0}%
                   </div>
@@ -321,7 +322,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
 
                 <div className="group relative p-6 rounded-2xl border border-white/5 bg-white/[0.03] backdrop-blur-xl overflow-hidden transition-all hover:border-white/20 hover:bg-white/[0.05]">
                   <div className="absolute top-0 right-0 p-2 opacity-50"><div className="h-2 w-2 rounded-full bg-amber-400 blur-[2px]" /></div>
-                  <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 mb-3 group-hover:text-amber-400 transition-colors">Transactions</div>
+                  <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 mb-3 group-hover:text-amber-400 transition-colors">{txt.home.recentActivity}</div>
                   <div className="text-3xl font-light text-white/90 font-mono tracking-tighter">{transactions.length}</div>
                   <div className="mt-4 flex gap-1 items-center">
                     {[...Array(5)].map((_, i) => <div key={i} className={`h-1 w-3 rounded-full ${i < 4 ? 'bg-amber-400' : 'bg-white/10'}`} />)}
@@ -334,7 +335,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                 <div className="group glass-card rounded-[2.5rem] p-8 flex flex-col h-[400px] border-white/5 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-8 z-10">
                      {hoveredAllocation ? (
-                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-right">
+                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-end">
                          <div className="text-[10px] font-black text-teal-400 uppercase tracking-widest">{hoveredAllocation.name}</div>
                          <div className="text-sm font-black font-mono text-zinc-100">{symbol}{(hoveredAllocation.value * rate).toLocaleString()}</div>
                        </motion.div>
@@ -342,7 +343,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                        <Info className="h-4 w-4 text-zinc-700 hover:text-teal-400 transition-colors cursor-help" />
                      )}
                   </div>
-                  <h3 className="text-xs uppercase font-black tracking-[0.3em] text-zinc-500 mb-8 border-b border-white/5 pb-4">Asset Allocation</h3>
+                  <h3 className="text-xs uppercase font-black tracking-[0.3em] text-zinc-500 mb-8 border-b border-white/5 pb-4">{txt.investments.allocation}</h3>
                   <div className="flex-1 min-h-[250px] relative">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -366,7 +367,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                       <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Total Assets</span>
+                       <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">{txt.home.totalAssets}</span>
                        <span className="text-xl font-black text-zinc-100 font-mono italic">100%</span>
                     </div>
                   </div>
@@ -381,8 +382,8 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                 </div>
 
                 <div className="group glass-card rounded-[2.5rem] p-8 flex flex-col h-[400px] border-white/5 relative overflow-hidden">
-                   <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4 pr-1">
-                      <h3 className="text-xs uppercase font-black tracking-[0.3em] text-zinc-500">Variable Expenditures</h3>
+                   <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4 pe-1">
+                      <h3 className="text-xs uppercase font-black tracking-[0.3em] text-zinc-500">{txt.analytics.topCategories}</h3>
                       {hoveredExpense && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
                           <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{hoveredExpense.name}</span>
@@ -439,7 +440,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                 <div className="glass-card rounded-[2.5rem] p-8 border-white/5 flex flex-col h-[450px]">
                   <div className="flex items-center justify-between mb-8">
                      <div className="flex flex-col">
-                        <h3 className="text-xs uppercase font-bold tracking-[0.3em] text-white/40">Growth Trajectory</h3>
+                        <h3 className="text-xs uppercase font-bold tracking-[0.3em] text-white/40">{txt.analytics.growth}</h3>
                         {hoveredTrend && (
                           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 mt-1">
                              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{hoveredTrend.date}</span>
@@ -449,7 +450,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                      </div>
                      <div className="flex items-center gap-2 text-[10px] text-pink-400 font-black uppercase tracking-widest bg-pink-500/5 px-2 py-1 rounded">
                        <Activity className="h-3 w-3" />
-                       Interactive Node
+                       {txt.analytics.growth}
                      </div>
                   </div>
                   <div className="flex-1 min-h-[300px]">
@@ -506,7 +507,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col h-[300px] shadow-sm lg:col-span-2">
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex-1">
-                      <h3 className="text-xs uppercase font-bold tracking-[0.3em] text-white/40">Portfolio Momentum</h3>
+                      <h3 className="text-xs uppercase font-bold tracking-[0.3em] text-white/40">{txt.investments.performance}</h3>
                       {hoveredMomentum ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 mt-1">
                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{hoveredMomentum.ticker} Delta</span>
@@ -515,7 +516,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                            </span>
                         </motion.div>
                       ) : (
-                        <p className="text-[10px] text-white/20 mt-1 uppercase tracking-widest font-bold">Relative Gain Distribution</p>
+                        <p className="text-[10px] text-white/20 mt-1 uppercase tracking-widest font-bold">{txt.investments.gain}</p>
                       )}
                     </div>
                     <div className="flex gap-4">
@@ -577,8 +578,8 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
             >
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
                 <div>
-                  <h3 className="text-3xl font-black font-display text-zinc-100 tracking-tight italic">Financial <span className="gradient-text">Objectives</span></h3>
-                  <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.3em] mt-2">Strategic accumulation & capital targets</p>
+                  <h3 className="text-3xl font-black font-display text-zinc-100 tracking-tight italic">{txt.analytics.goals}</h3>
+                  <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.3em] mt-2">{txt.analytics.goals}</p>
                 </div>
                 <button
                   onClick={onAddGoal}
@@ -586,7 +587,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                 >
                   <div className="absolute inset-0 bg-linear-to-r from-pink-500 to-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   <Plus className="h-4 w-4 text-zinc-900 relative z-10 transition-colors" />
-                  <span className="text-[10px] font-black text-zinc-900 relative z-10 uppercase tracking-widest whitespace-nowrap">Initialize Objective</span>
+                  <span className="text-[10px] font-black text-zinc-900 relative z-10 uppercase tracking-widest whitespace-nowrap">{txt.analytics.addGoal}</span>
                 </button>
               </div>
 
@@ -595,17 +596,17 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                   <div key={goal.id} className="group glass-card rounded-[2.5rem] p-8 relative overflow-hidden transition-all duration-300 hover:bg-zinc-900/60">
                     <button
                       onClick={() => onDeleteGoal(goal.id)}
-                      className="absolute top-6 right-6 p-2 text-zinc-600 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute top-6 end-6 p-2 text-zinc-600 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                     
                       <div className="mb-8">
-                        <span className="text-[9px] uppercase font-black text-pink-500/80 tracking-[0.3em] italic">{goal.category}</span>
+                        <span className="text-[9px] uppercase font-black text-pink-500/80 tracking-[0.3em] italic">{categoryLabel(goal.category)}</span>
                         <input
                           value={goal.name}
                           onChange={(e) => onUpdateGoal(goal.id, 'name', e.target.value)}
-                          placeholder="Define Objective..."
+                          placeholder={txt.analytics.goalPlaceholder}
                           className="bg-transparent text-2xl font-black font-display text-zinc-100 outline-none w-full placeholder:text-zinc-800 transition-all focus:placeholder:opacity-0 italic uppercase"
                         />
                       </div>
@@ -613,9 +614,9 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                     <div className="space-y-6">
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-4">
                         <div className="flex flex-col gap-1 flex-1 w-full">
-                          <div className="text-[9px] text-zinc-600 uppercase font-black tracking-[0.2em]">Position</div>
+                          <div className="text-[9px] text-zinc-600 uppercase font-black tracking-[0.2em]">{txt.analytics.current}</div>
                           <div className="flex items-center text-2xl font-black font-mono text-zinc-100 relative w-full">
-                            <span className="mr-1">{symbol}</span>
+                            <span className="me-1">{symbol}</span>
                             <div className="relative flex-1">
                               <input
                                 type="number"
@@ -630,17 +631,17 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                             </div>
                           </div>
                         </div>
-                        <div className="flex flex-col gap-1 flex-1 w-full md:text-right">
-                          <div className="text-[9px] text-zinc-600 uppercase font-black tracking-[0.2em]">Target</div>
+                        <div className="flex flex-col gap-1 flex-1 w-full md:text-end">
+                          <div className="text-[9px] text-zinc-600 uppercase font-black tracking-[0.2em]">{txt.analytics.target}</div>
                           <div className="flex items-center justify-start md:justify-end text-2xl font-black font-mono text-zinc-500 relative w-full">
-                             <span className="mr-1">{symbol}</span>
+                             <span className="me-1">{symbol}</span>
                              <div className="relative flex-1 md:flex-none md:min-w-[150px]">
                                <input
                                 type="number"
                                 value={goal.targetAmount === 0 ? '' : Number((goal.targetAmount * rate).toFixed(2)).toString()}
                                 onChange={(e) => onUpdateGoal(goal.id, 'targetAmount', (parseFloat(e.target.value) || 0) / rate)}
                                 onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                                className="bg-transparent w-full outline-none border-b-2 border-transparent focus:border-teal-500/20 md:text-right transition-all peer focus:opacity-100 opacity-0"
+                                className="bg-transparent w-full outline-none border-b-2 border-transparent focus:border-teal-500/20 md:text-end transition-all peer focus:opacity-100 opacity-0"
                               />
                               <div className="absolute inset-0 pointer-events-none peer-focus:hidden flex items-center justify-start md:justify-end truncate">
                                 {(goal.targetAmount * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -659,7 +660,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                       </div>
 
                       <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                        <span className="text-zinc-600 tracking-[0.3em]">Status</span>
+                        <span className="text-zinc-600 tracking-[0.3em]">{txt.common.status}</span>
                         <span className="text-pink-500 font-mono text-xs italic">{((goal.currentAmount / goal.targetAmount) * 100).toFixed(1)}%</span>
                       </div>
                     </div>
@@ -678,7 +679,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
             >
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-3xl font-black font-display text-zinc-100 tracking-tight italic">AI <span className="gradient-text">Advisor</span></h3>
+                  <h3 className="text-3xl font-black font-display text-zinc-100 tracking-tight italic">{txt.analytics.insights}<span className="gradient-text">{txt.analytics.insights}</span></h3>
                   <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.3em] mt-2">Neural wealth strategy & risk mitigation protocols</p>
                 </div>
                 {loadingAi && (
@@ -694,7 +695,7 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                   <div key={cat} className="space-y-6">
                     <div className="flex items-center gap-3 border-b border-white/5 pb-4">
                        <div className={`h-2 w-2 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)] ${cat === 'Safe Zone' ? 'bg-emerald-400 shadow-emerald-500/50' : cat === 'Wealth Building' ? 'bg-purple-400 shadow-purple-500/50' : 'bg-cyan-400 shadow-cyan-500/50'}`} />
-                       <span className="text-[10px] uppercase font-black tracking-[0.3em] text-zinc-400">{cat}</span>
+                       <span className="text-[10px] uppercase font-black tracking-[0.3em] text-zinc-400">{cat === 'Safe Zone' ? txt.analytics.groupSafe : cat === 'Wealth Building' ? txt.analytics.groupWealth : txt.analytics.groupGoals}</span>
                     </div>
                     <div className="space-y-4">
                       {aiTips.filter(tip => tip.category === cat).map((tip, i) => (
@@ -725,12 +726,12 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                    <div className="h-16 w-16 rounded-3xl bg-pink-500/10 flex items-center justify-center mb-8 shadow-neon-sm relative z-10">
                       <Cpu className="h-8 w-8 text-pink-400" />
                    </div>
-                   <h4 className="text-lg font-black text-zinc-100 font-display uppercase tracking-widest mb-6 relative z-10 italic">Autonomous Wealth Engine</h4>
+                   <h4 className="text-lg font-black text-zinc-100 font-display uppercase tracking-widest mb-6 relative z-10 italic">{txt.analytics.insights}</h4>
                    <p className="text-sm text-zinc-500 leading-relaxed max-w-sm font-medium relative z-10">
                      Our proprietary AI evalutates liquidity velocity, risk exposure, and market sentiment to deliver millisecond-accurate wealth preservation strategies.
                    </p>
                    <div className="mt-12 pt-12 border-t border-white/5 w-full relative z-10">
-                      <div className="text-[10px] text-zinc-600 uppercase font-black tracking-[0.4em] mb-4">Neural Reliability Rating</div>
+                      <div className="text-[10px] text-zinc-600 uppercase font-black tracking-[0.4em] mb-4">{txt.analytics.insights}</div>
                       <div className="flex justify-center gap-2">
                          {[...Array(5)].map((_, i) => (
                            <motion.div 

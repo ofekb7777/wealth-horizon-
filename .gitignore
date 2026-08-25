@@ -6,3 +6,19 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# נוצר אוטומטית ע"י postinstall מתוך node_modules/sql.js
+public/assets/sql-wasm.wasm
+dev-dist/
+
+# Capacitor / Android — תוצרי בנייה ותצורה מקומית
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/capacitor-cordova-android-plugins/
+*.apk
+*.aab
+.test-build/

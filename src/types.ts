@@ -3,33 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  category: string;
-  amount: number;
-  type?: 'income' | 'expense';
-  accountId?: string;
-}
+/**
+ * טיפוסי הישויות עברו ל-`src/data/types.ts` (שכבת הנתונים) בשלב 1.
+ * הם מיוצאים מחדש מכאן כדי שקומפוננטות קיימות ימשיכו לייבא מאותו מקום.
+ */
+export type {
+  Transaction, Account, Investment, Goal, Budget, Reminder, UserProfile,
+} from './data/types';
 
-export interface Account {
-  id: string;
-  name: string;
-  type: 'Bank' | 'Investment' | 'Pension' | 'Cash';
-  balance: number;
-}
+import type {
+  Transaction, Account, Investment, Goal, Budget, Reminder,
+} from './data/types';
 
-export interface Investment {
-  id: string;
-  ticker: string;
-  name?: string;
-  exchange?: string;
-  shares: number;
-  avgPrice: number;
-  currentPrice: number;
-}
-
+/** הגדרת מסך — UI בלבד, לא נשמר במסד. */
 export interface Sheet {
   id: string;
   name: string;
@@ -37,31 +23,7 @@ export interface Sheet {
   type: 'home' | 'income' | 'expenses' | 'dashboard' | 'accounts' | 'investments' | 'playground' | 'budget' | 'settings';
 }
 
-export interface Goal {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline?: string;
-  category: string;
-}
-
-export interface Budget {
-  id: string;
-  category: string;
-  limit: number;
-}
-
-export interface Reminder {
-  id: string;
-  subject: string;
-  body: string;
-  scheduledTime: string; // ISO string
-  sent: boolean;
-  recurrence?: 'monthly';
-  dayOfMonth?: number;
-}
-
+/** ה-state הגלובלי של האפליקציה, כפי ש-App.tsx מחזיק אותו. */
 export interface SpreadsheetState {
   transactions: Transaction[];
   accounts: Account[];

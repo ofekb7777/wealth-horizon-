@@ -1,10 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+/*
+ * פונטים מקומיים.
+ *
+ * עד שלב 3 הם נמשכו מ-Google Fonts בזמן ריצה. באפליקציית אנדרואיד
+ * אופליין הבקשה הזו נכשלת והעיצוב נשבר לפונט ברירת המחדל של המערכת.
+ * עכשיו הם נארזים לתוך ה-APK ועובדים במצב טיסה.
+ *
+ * רק תת-הקבוצה הלטינית: הפונטים האלה ממילא לא מכילים גליפים עבריים,
+ * ועברית תיפול לפונט המערכת. אין טעם לארוז קירילית ויוונית.
+ */
+@import '@fontsource/outfit/latin-300.css';
+@import '@fontsource/outfit/latin-400.css';
+@import '@fontsource/outfit/latin-500.css';
+@import '@fontsource/outfit/latin-600.css';
+@import '@fontsource/outfit/latin-700.css';
+@import '@fontsource/outfit/latin-800.css';
+@import '@fontsource/outfit/latin-900.css';
+@import '@fontsource/inter/latin-300.css';
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';
+@import '@fontsource/jetbrains-mono/latin-400.css';
+@import '@fontsource/jetbrains-mono/latin-500.css';
+
+/*
+ * Heebo — הפונט העברי.
+ *
+ * Outfit, Inter ו-JetBrains Mono לא מכילים גליפים עבריים כלל, ולכן עברית
+ * הייתה נופלת לפונט ברירת המחדל של המערכת ונראית שונה בכל מכשיר.
+ * Heebo נבנה במיוחד כהרחבה עברית ל-Roboto, ולכן הוא מתיישב טוב עם
+ * הפונטים הלטיניים שכבר יש כאן.
+ */
+@import '@fontsource/heebo/hebrew-300.css';
+@import '@fontsource/heebo/hebrew-400.css';
+@import '@fontsource/heebo/hebrew-500.css';
+@import '@fontsource/heebo/hebrew-700.css';
+@import '@fontsource/heebo/hebrew-800.css';
+@import '@fontsource/heebo/hebrew-900.css';
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Outfit", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Inter", "Heebo", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Outfit", "Heebo", sans-serif;
+  --font-mono: "JetBrains Mono", "Heebo", ui-monospace, SFMono-Regular, monospace;
 }
 
 @layer base {
@@ -65,7 +103,7 @@
   }
   
   .glass-sidebar {
-    @apply bg-zinc-950/80 backdrop-blur-3xl border-r border-white/5;
+    @apply bg-zinc-950/80 backdrop-blur-3xl border-e border-white/5;
   }
 
   .gradient-text {
@@ -89,7 +127,7 @@
   }
 
   .horizon-border {
-    @apply border-l-4 border-pink-500;
+    @apply border-s-4 border-pink-500;
   }
 }
 
@@ -152,7 +190,7 @@ body.theme-mono-dark #root {
   background: #000000 !important;
 }
 
-.theme-mono-dark .border-r,
+.theme-mono-dark .border-e,
 .theme-mono-dark .border-b,
 .theme-mono-dark .border-t,
 .theme-mono-dark .border,
@@ -323,7 +361,7 @@ body.theme-mono-light #root {
   background-color: #f4f4f5 !important;
 }
 
-.theme-mono-light .border-r,
+.theme-mono-light .border-e,
 .theme-mono-light .border-b,
 .theme-mono-light .border-t,
 .theme-mono-light .border,

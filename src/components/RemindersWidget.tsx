@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { txt } from '../i18n/he';
 import { Reminder } from '../types';
 import { Calendar, Clock, Plus, Trash2, Mail, RefreshCw, Banknote } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -7,24 +8,17 @@ interface RemindersWidgetProps {
   reminders: Reminder[];
   onAddReminder: (subject: string, body: string, time: string, recurrence?: 'monthly', dayOfMonth?: number) => void;
   onDeleteReminder: (id: string) => void;
-  accessToken: string | null;
-  onRequiresAuth: () => void;
 }
 
-export default function RemindersWidget({ reminders, onAddReminder, onDeleteReminder, accessToken, onRequiresAuth }: RemindersWidgetProps) {
+export default function RemindersWidget({ reminders, onAddReminder, onDeleteReminder }: RemindersWidgetProps) {
   const [dayOfMonth, setDayOfMonth] = useState<number>(1);
   const [isAdding, setIsAdding] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accessToken) {
-      onRequiresAuth();
-      return;
-    }
-    
     if (dayOfMonth) {
-       const subject = "Paycheck Data Reminder";
-       const body = "Please input your paycheck data into Wealth Horizon.";
+       const subject = "להזין נתוני משכורת";
+       const body = "הגיע הזמן להזין את נתוני המשכורת החודש.";
        const time = "09:00";
        
        const currentDate = new Date();
@@ -63,8 +57,8 @@ export default function RemindersWidget({ reminders, onAddReminder, onDeleteRemi
             <Banknote className="h-5 w-5 text-zinc-300" />
           </div>
           <div>
-             <h3 className="text-zinc-100 font-extrabold text-sm uppercase tracking-widest leading-none">Paycheck Reminder</h3>
-             <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-1">Via Gmail Integration</p>
+             <h3 className="text-zinc-100 font-extrabold text-sm uppercase tracking-widest leading-none">{txt.reminders.title}</h3>
+             <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-1">{txt.reminders.monthly}</p>
           </div>
         </div>
         {!isAdding && (
@@ -77,7 +71,7 @@ export default function RemindersWidget({ reminders, onAddReminder, onDeleteRemi
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
+      <div className="flex-1 overflow-y-auto pe-2 custom-scrollbar space-y-3">
         {isAdding && (
           <motion.form 
             initial={{ opacity: 0, y: -10 }}
@@ -86,7 +80,7 @@ export default function RemindersWidget({ reminders, onAddReminder, onDeleteRemi
             onSubmit={handleSubmit}
           >
             <div>
-              <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-2 block">Monthly run on day (09:00 AM)</label>
+              <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-2 block">{txt.reminders.dayOfMonth} (09:00)</label>
               <div className="relative">
                 <select
                   value={dayOfMonth}
@@ -122,8 +116,8 @@ export default function RemindersWidget({ reminders, onAddReminder, onDeleteRemi
         {reminders.length === 0 && !isAdding && (
           <div className="text-center py-6 text-zinc-500">
             <Mail className="h-8 w-8 mx-auto mb-2 opacity-20" />
-            <p className="text-xs uppercase tracking-widest font-bold">No Reminders set</p>
-            <p className="text-[10px] max-w-[200px] mx-auto mt-2">Monthly emails will be sent from your connected Gmail when the app is active.</p>
+            <p className="text-xs uppercase tracking-widest font-bold">{txt.reminders.empty}</p>
+            <p className="text-[10px] max-w-[200px] mx-auto mt-2">{txt.reminders.note}</p>
           </div>
         )}
 
@@ -135,7 +129,7 @@ export default function RemindersWidget({ reminders, onAddReminder, onDeleteRemi
               </p>
               <button 
                 onClick={() => onDeleteReminder(reminder.id)}
-                className="p-1 text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all ml-4"
+                className="p-1 text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all ms-4"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

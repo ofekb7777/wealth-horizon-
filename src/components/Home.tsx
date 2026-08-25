@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { txt, categoryLabel } from '../i18n/he';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { SpreadsheetState, Currency, CURRENCIES } from '../types';
 import { Wallet, TrendingUp, TrendingDown, Target, Terminal, Settings, Check, X, Zap, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
@@ -13,15 +14,9 @@ interface HomeProps {
   currency: Currency;
   patchNotes: string;
   onUpdatePatchNotes: (notes: string) => void;
-  onBroadcastUpdate?: (notes: string) => void;
   onImportState: (state: SpreadsheetState) => void;
-  isAdmin?: boolean;
-  onInstall?: () => void;
-  showInstallButton?: boolean;
   onAddReminder?: (subject: string, body: string, time: string) => void;
   onDeleteReminder?: (id: string) => void;
-  accessToken?: string | null;
-  onRequiresAuth?: () => void;
 }
 
 export default function Home({ 
@@ -30,15 +25,9 @@ export default function Home({
   currency, 
   patchNotes, 
   onUpdatePatchNotes, 
-  onBroadcastUpdate, 
   onImportState, 
-  isAdmin,
-  onInstall,
-  showInstallButton,
   onAddReminder,
   onDeleteReminder,
-  accessToken,
-  onRequiresAuth
 }: HomeProps) {
   const { version } = useVersion();
   const { transactions, accounts, investments, goals } = state;
@@ -60,16 +49,6 @@ export default function Home({
 
   const handlePatchSubmit = async () => {
     onUpdatePatchNotes(localPatch);
-    if (isAdmin && onBroadcastUpdate) {
-      setIsBroadcasting(true);
-      try {
-        await onBroadcastUpdate(localPatch);
-      } catch (err) {
-        console.error("Home.tsx: Broadcast error", err);
-      } finally {
-        setIsBroadcasting(false);
-      }
-    }
     setIsEditingPatch(false);
   };
 
@@ -143,9 +122,9 @@ export default function Home({
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="flex flex-col gap-2">
           <h2 className="text-4xl font-extrabold font-display text-zinc-100 tracking-tight">
-            Welcome <span className="gradient-text italic">Back</span> <span className="text-zinc-600 text-sm font-mono">v{version}</span>
+            <span className="gradient-text italic">{txt.home.welcome}</span> <span className="text-zinc-600 text-sm font-mono">v{version}</span>
           </h2>
-          <p className="text-sm font-medium text-zinc-500 uppercase tracking-widest">Wealth Horizon Intelligence Layer</p>
+          <p className="text-sm font-medium text-zinc-500 uppercase tracking-widest">{txt.home.netWorth}</p>
         </div>
       </div>
 
@@ -159,21 +138,19 @@ export default function Home({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-pink-500 animate-pulse" />
-              <span className="text-[10px] font-black text-pink-500 uppercase tracking-[0.3em] italic">System Update</span>
+              <span className="text-[10px] font-black text-pink-500 uppercase tracking-[0.3em] italic">{txt.home.notes}</span>
             </div>
             
-            {isAdmin && (
-              <button 
-                onClick={() => {
-                  setLocalPatch(patchNotes);
-                  setIsEditingPatch(!isEditingPatch);
-                }}
-                className="p-2 rounded-lg bg-white/5 text-zinc-500 hover:text-zinc-100 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
-                title="Edit Build Notes"
-              >
-                <Settings className="h-4 w-4" />
-              </button>
-            )}
+            <button 
+              onClick={() => {
+                setLocalPatch(patchNotes);
+                setIsEditingPatch(!isEditingPatch);
+              }}
+              className="p-2 rounded-lg bg-white/5 text-zinc-500 hover:text-zinc-100 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
+              title={txt.common.edit}
+            >
+              <Settings className="h-4 w-4" />
+            </button>
           </div>
 
           {isEditingPatch ? (
@@ -183,7 +160,7 @@ export default function Home({
                 onChange={(e) => setLocalPatch(e.target.value)}
                 className="w-full bg-zinc-900/50 border border-white/10 rounded-xl p-4 text-sm font-mono text-zinc-300 focus:outline-none focus:ring-1 focus:ring-pink-500/50 italic"
                 rows={2}
-                placeholder="Enter patch notes..."
+                placeholder={txt.home.notesPlaceholder}
               />
               <div className="flex items-center gap-2 self-end">
                 <button 
@@ -219,7 +196,7 @@ export default function Home({
             <div className="p-2 rounded-xl bg-zinc-800 text-zinc-400 group-hover:text-pink-400 transition-colors">
               <Wallet className="h-5 w-5" />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Cash Assets</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{txt.home.cashAssets}</span>
           </div>
           <div className="text-2xl font-black font-mono text-zinc-100 mt-2">
             {symbol}{(summaryData.cashBalance * rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -234,7 +211,7 @@ export default function Home({
             <div className="p-2 rounded-xl bg-zinc-800 text-zinc-400 group-hover:text-pink-400 transition-colors">
               <TrendingUp className="h-5 w-5" />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Investments</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{txt.screens.investments}</span>
           </div>
           <div className="text-2xl font-black font-mono text-zinc-100 mt-2">
             {symbol}{(summaryData.investmentsValue * rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -249,10 +226,10 @@ export default function Home({
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
               <ArrowUp className="h-5 w-5" />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Inflow</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{txt.home.inflow}</span>
           </div>
           <div className="text-sm font-bold text-zinc-400 mt-2 group-hover:text-emerald-400 flex items-center gap-2">
-            Manage <span className="text-lg">&rarr;</span>
+            {txt.home.manage} <span className="text-lg">&larr;</span>
           </div>
         </div>
 
@@ -264,10 +241,10 @@ export default function Home({
             <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400">
               <ArrowDown className="h-5 w-5" />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Outflow</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{txt.home.outflow}</span>
           </div>
           <div className="text-sm font-bold text-zinc-400 mt-2 group-hover:text-rose-400 flex items-center gap-2">
-            Manage <span className="text-lg">&rarr;</span>
+            {txt.home.manage} <span className="text-lg">&larr;</span>
           </div>
         </div>
       </div>
@@ -280,10 +257,10 @@ export default function Home({
               <h3 className="text-[10px] uppercase font-bold tracking-[0.2em] text-zinc-500 mb-2">
                 {hoveredNet ? (
                   <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-pink-500 italic font-black">
-                    Snapshot // {hoveredNet.date}
+                    {txt.home.snapshotAt}{hoveredNet.date}
                   </motion.span>
                 ) : (
-                  "Total Net Worth"
+                  txt.home.totalNetWorth
                 )}
               </h3>
               <div className="text-3xl md:text-4xl font-black font-mono text-zinc-100 tracking-tighter">
@@ -291,10 +268,10 @@ export default function Home({
               </div>
             </div>
             <div className={`px-3 py-1 rounded-full text-[10px] font-bold ${summaryData.totalNetWorth >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-               {hoveredNet ? 'SNAPSHOT' : 'TOTAL VALUE'}
+               {hoveredNet ? txt.home.snapshot : txt.home.totalValue}
             </div>
           </div>
-          <div className="flex-1 min-h-[150px] -ml-4">
+          <div className="flex-1 min-h-[150px] -ms-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart 
                 data={summaryData.trendData}
@@ -346,7 +323,7 @@ export default function Home({
                   Breakdown // {hoveredMonthly.month}
                 </motion.span>
               ) : (
-                "Monthly Cash Flow"
+                txt.home.monthlyFlow
               )}
             </h3>
             {hoveredMonthly && (
@@ -356,7 +333,7 @@ export default function Home({
               </div>
             )}
           </div>
-          <div className="flex-1 min-h-[150px] -ml-4">
+          <div className="flex-1 min-h-[150px] -ms-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={summaryData.monthlyChartData} 
@@ -387,8 +364,8 @@ export default function Home({
                   isAnimationActive={false}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em', paddingTop: '20px' }} />
-                <Bar dataKey="income" name="Income" fill="var(--color-pink-500)" radius={[6, 6, 0, 0]} maxBarSize={20} />
-                <Bar dataKey="expenses" name="Expenses" fill="var(--color-rose-500)" radius={[6, 6, 0, 0]} maxBarSize={20} />
+                <Bar dataKey="income" name={txt.analytics.seriesIncome} fill="var(--color-pink-500)" radius={[6, 6, 0, 0]} maxBarSize={20} />
+                <Bar dataKey="expenses" name={txt.analytics.seriesExpenses} fill="var(--color-rose-500)" radius={[6, 6, 0, 0]} maxBarSize={20} />
               </BarChart>
             </ResponsiveContainer>
           </div>

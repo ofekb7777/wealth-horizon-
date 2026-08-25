@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- zinc-950 — אותו רקע כמו האפליקציה עצמה -->
+    <color name="colorPrimary">#09090b</color>
+    <color name="colorPrimaryDark">#09090b</color>
+    <!-- pink-500 — צבע ההדגשה של ערכת הנושא -->
+    <color name="colorAccent">#ec4899</color>
+    <color name="splashBackground">#09090b</color>
+
+    <!-- הווידג'ט -->
+    <color name="widgetBackground">#0f0f12</color>
+    <color name="widgetText">#f4f4f5</color>
+    <color name="widgetMuted">#a1a1aa</color>
+    <color name="widgetFaint">#71717a</color>
+    <color name="widgetTrack">#27272a</color>
+    <color name="widgetPositive">#34d399</color>
+    <color name="widgetNegative">#fb7185</color>
+</resources>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import { txt } from '../i18n/he';
 import { Theme, BgEffect, MonoStyle } from '../context/ThemeContext';
 import { Currency, CURRENCIES, SpreadsheetState } from '../types';
-import { User } from 'firebase/auth';
 import { 
   Palette, 
   Sparkles, 
@@ -17,11 +17,11 @@ import {
   Database,
   Lock,
   Globe,
-  RefreshCw,
   FolderSync
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import RemindersWidget from './RemindersWidget';
+import { getApiKey, setApiKey } from '../services/geminiService';
 
 interface SettingsProps {
   theme: Theme;
@@ -32,15 +32,11 @@ interface SettingsProps {
   onSetMonoStyle: (style: MonoStyle) => void;
   currency: Currency;
   onSetCurrency: (currency: Currency) => void;
-  user: User | null;
-  isAdmin: boolean;
   state: SpreadsheetState;
   onImportState: (state: SpreadsheetState) => void;
   onResetData: () => void;
-  onAddReminder?: (subject: string, body: string, time: string) => void;
-  onDeleteReminder?: (id: string) => void;
-  accessToken?: string | null;
-  onRequiresAuth?: () => void;
+  onAddReminder: (subject: string, body: string, time: string, recurrence?: 'monthly', dayOfMonth?: number) => void;
+  onDeleteReminder: (id: string) => void;
 }
 
 export default function Settings({
@@ -52,30 +48,20 @@ export default function Settings({
   onSetMonoStyle,
   currency,
   onSetCurrency,
-  user,
-  isAdmin,
   state,
   onImportState,
   onResetData,
   onAddReminder,
-  onDeleteReminder,
-  accessToken,
-  onRequiresAuth
+  onDeleteReminder
 }: SettingsProps) {
-  const [activeDropdown, setActiveDropdown] = useState<'theme' | 'effect' | 'currency' | 'user' | 'backup' | 'reset' | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'theme' | 'effect' | 'currency' | 'backup' | 'reset' | null>(null);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [geminiKey, setGeminiKey] = useState(() => getApiKey());
+  const [keySaved, setKeySaved] = useState(false);
   const [copiedUid, setCopiedUid] = useState(false);
 
-  const toggleDropdown = (type: 'theme' | 'effect' | 'currency' | 'user' | 'backup' | 'reset') => {
+  const toggleDropdown = (type: 'theme' | 'effect' | 'currency' | 'backup' | 'reset') => {
     setActiveDropdown(prev => prev === type ? null : type);
-  };
-
-  const handleCopyUid = () => {
-    if (user?.uid) {
-      navigator.clipboard.writeText(user.uid);
-      setCopiedUid(true);
-      setTimeout(() => setCopiedUid(false), 2000);
-    }
   };
 
   const handleExportData = () => {
@@ -99,14 +85,14 @@ export default function Settings({
         const json = JSON.parse(event.target?.result as string);
         if (json.transactions && json.accounts) {
           onImportState(json);
-          alert('Backup restored successfully.');
+          alert(txt.settings.importSuccess);
           setActiveDropdown(null);
         } else {
-          alert('Invalid backup file structure.');
+          alert(txt.settings.importInvalid);
         }
       } catch (err) {
         console.error('Import failed', err);
-        alert('Failed to parse backup snapshot.');
+        alert(txt.settings.importFailed);
       }
     };
     reader.readAsText(file);
@@ -147,9 +133,9 @@ export default function Settings({
           <div className="p-2 bg-pink-500/20 rounded-xl border border-pink-500/30">
             <SettingsIcon className="h-5 w-5 text-pink-400" />
           </div>
-          <h1 className="text-3xl font-black text-zinc-100 uppercase tracking-tighter italic">Settings Console</h1>
+          <h1 className="text-3xl font-black text-zinc-100 uppercase tracking-tighter italic">{txt.settings.title}</h1>
         </div>
-        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest ml-12">
+        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest ms-12">
           Configure Preferences & Control Dashboard Nodes
         </p>
       </div>
@@ -172,7 +158,7 @@ export default function Settings({
             </div>
             
             <div className="flex flex-col gap-1 items-center">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Active UI Theme</p>
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.theme}</p>
               <p className="text-base font-black tracking-tighter text-zinc-100 flex items-center gap-1.5 justify-center">
                 {theme === 'mono' ? (monoStyle === 'light' ? 'Black & White' : 'White & Black') : currentThemeObj.label}
                 <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform ${activeDropdown === 'theme' ? 'rotate-180' : ''}`} />
@@ -188,9 +174,9 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-left cursor-default"
+                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-start cursor-default"
               >
-                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1 mb-1 border-b border-white/5 pb-1">Select Visual Scheme</h4>
+                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ps-1 mb-1 border-b border-white/5 pb-1">{txt.settings.themeHint}</h4>
                 <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-hide font-display">
                   {themesList.map((t) => (
                     <button
@@ -243,7 +229,7 @@ export default function Settings({
             </div>
             
             <div className="flex flex-col gap-1 items-center">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Ambient Canvas</p>
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.ambient}</p>
               <p className="text-base font-black tracking-tighter text-zinc-100 flex items-center gap-1.5 justify-center">
                 {currentEffectObj.label}
                 <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform ${activeDropdown === 'effect' ? 'rotate-180' : ''}`} />
@@ -257,9 +243,9 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-left cursor-default space-y-2"
+                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-start cursor-default space-y-2"
               >
-                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1 mb-1 border-b border-white/5 pb-1">Ambient Atmosphere</h4>
+                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ps-1 mb-1 border-b border-white/5 pb-1">{txt.settings.ambient}</h4>
                 <div className="space-y-1">
                   {ambientEffects.map((ae) => (
                     <button
@@ -268,7 +254,7 @@ export default function Settings({
                         onSetBgEffect(ae.id);
                         setActiveDropdown(null);
                       }}
-                      className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-xs transition-colors text-left ${
+                      className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-xs transition-colors text-start ${
                         bgEffect === ae.id 
                           ? 'bg-orange-500/10 text-orange-400' 
                           : 'hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200'
@@ -302,7 +288,7 @@ export default function Settings({
             </div>
             
             <div className="flex flex-col gap-1 items-center">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">System Currency</p>
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.currency}</p>
               <p className="text-base font-black tracking-tighter text-zinc-100 flex items-center gap-1.5 justify-center">
                 {currency} ({CURRENCIES[currency].symbol})
                 <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform ${activeDropdown === 'currency' ? 'rotate-180' : ''}`} />
@@ -316,9 +302,9 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-left cursor-default"
+                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-start cursor-default"
               >
-                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1 mb-1 border-b border-white/5 pb-1">Native Standard</h4>
+                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ps-1 mb-1 border-b border-white/5 pb-1">{txt.settings.currency}</h4>
                 <div className="space-y-1">
                   {appCurrencies.map((curr) => (
                     <button
@@ -335,74 +321,11 @@ export default function Settings({
                     >
                       <div className="flex flex-col min-w-0">
                         <span className="font-bold text-[10px] uppercase tracking-wider">{curr} - {currencyNames[curr]}</span>
-                        <span className="text-[7px] text-zinc-500 font-mono">Precision System Rate Matrix</span>
+                        <span className="text-[7px] text-zinc-500 font-mono">{txt.settings.currency}</span>
                       </div>
                       <span className="text-[11px] font-mono font-black">{CURRENCIES[curr].symbol}</span>
                     </button>
                   ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Card 4: User Credentials (Sleek matching stats) */}
-        <div className="relative w-full">
-          <button 
-            onClick={() => toggleDropdown('user')}
-            className={`p-4 border border-zinc-500/20 space-y-2 flex flex-col items-center justify-center text-center 
-              transition-all duration-200 w-full rounded-2xl relative group min-h-[140px]
-              glass-card bg-zinc-900/40
-              shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] cursor-pointer
-              ${activeDropdown === 'user' ? 'border-violet-500/50 shadow-[0_20px_40px_-15px_rgba(139,92,246,0.3)]' : 'hover:border-violet-500/20'}`}
-          >
-            <div className="p-2 w-fit rounded-xl bg-violet-500/10 border border-violet-500/20">
-              <UserIcon className="h-5 w-5 text-violet-400" />
-            </div>
-            
-            <div className="flex flex-col gap-1 items-center min-w-0 w-full">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">User Identity</p>
-              <p className="text-base font-black tracking-tighter text-zinc-100 flex items-center gap-1.5 justify-center truncate w-full px-2">
-                {user?.displayName || "Standard User"}
-                <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform ${activeDropdown === 'user' ? 'rotate-180' : ''}`} />
-              </p>
-            </div>
-          </button>
-
-          <AnimatePresence>
-            {activeDropdown === 'user' && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-4 border border-zinc-500/20 shadow-2xl z-50 text-left cursor-default space-y-3"
-              >
-                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest border-b border-white/5 pb-1">Verified Profile Token</h4>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full border border-pink-500/30 bg-zinc-900 flex items-center justify-center shrink-0">
-                    {user?.photoURL ? (
-                      <img src={user.photoURL} alt="User Avatar" className="h-full w-full rounded-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <UserIcon className="h-4.5 w-4.5 text-zinc-500" />
-                    )}
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-black text-zinc-100 truncate">{user?.displayName || "Anonymous Terminal User"}</span>
-                    <span className="text-[8px] text-zinc-500 font-mono truncate">{user?.email || "No email synchronized"}</span>
-                  </div>
-                </div>
-
-                <div className="p-2.5 bg-zinc-800 rounded-xl border border-white/10 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[7px] font-black uppercase text-zinc-400 tracking-wider">Storage Key Identifier</span>
-                    <button 
-                      onClick={handleCopyUid} 
-                      className="text-[7px] font-black px-2 py-1 rounded bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 uppercase tracking-widest active:scale-95 transition-all"
-                    >
-                      {copiedUid ? 'Copied' : 'Copy'}
-                    </button>
-                  </div>
-                  <span className="text-[9px] font-mono text-zinc-200 block break-all">{user?.uid || 'Not Activated'}</span>
                 </div>
               </motion.div>
             )}
@@ -424,7 +347,7 @@ export default function Settings({
             </div>
             
             <div className="flex flex-col gap-1 items-center">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Database Sync</p>
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.backup}</p>
               <p className="text-base font-black tracking-tighter text-zinc-100 flex items-center gap-1.5 justify-center">
                 Backup State
                 <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform ${activeDropdown === 'backup' ? 'rotate-180' : ''}`} />
@@ -438,23 +361,23 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-left cursor-default space-y-2"
+                className="absolute top-full mt-2 left-0 w-full glass-card rounded-2xl p-3 border border-zinc-500/20 shadow-2xl z-50 text-start cursor-default space-y-2"
               >
-                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest pl-1 border-b border-white/5 pb-1">Local Ledger Tools</h4>
+                <h4 className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ps-1 border-b border-white/5 pb-1">{txt.settings.backupHint}</h4>
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={handleExportData}
                     className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/5 bg-zinc-900/60 hover:bg-zinc-900 hover:border-sky-500/30 text-zinc-300 transition-all text-center gap-1 group/btn"
                   >
                     <Download className="h-4 w-4 text-sky-400 group-hover/btn:scale-110 transition-transform" />
-                    <span className="text-[8px] font-bold uppercase tracking-wider">Export State</span>
+                    <span className="text-[8px] font-bold uppercase tracking-wider">{txt.settings.export}</span>
                   </button>
 
                   <label 
                     className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/5 bg-zinc-900/60 hover:bg-zinc-900 hover:border-sky-500/30 text-zinc-300 transition-all text-center gap-1 cursor-pointer group/label"
                   >
                     <Upload className="h-4 w-4 text-sky-400 group-hover/label:scale-110 transition-transform" />
-                    <span className="text-[8px] font-bold uppercase tracking-wider">Import State</span>
+                    <span className="text-[8px] font-bold uppercase tracking-wider">{txt.settings.import}</span>
                     <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
                   </label>
                 </div>
@@ -478,7 +401,7 @@ export default function Settings({
             </div>
             
             <div className="flex flex-col gap-1 items-center">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Database Purge</p>
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.reset}</p>
               <p className="text-base font-black tracking-tighter text-zinc-100 flex items-center gap-1.5 justify-center">
                 Wipe Ledger
                 <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform ${activeDropdown === 'reset' ? 'rotate-180' : ''}`} />
@@ -492,10 +415,10 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full mt-2 left-0 w-full bg-zinc-950/95 rounded-2xl p-4 border border-rose-500/30 shadow-2xl z-50 text-left backdrop-blur-md space-y-3"
+                className="absolute top-full mt-2 left-0 w-full bg-zinc-950/95 rounded-2xl p-4 border border-rose-500/30 shadow-2xl z-50 text-start backdrop-blur-md space-y-3"
               >
                 <div className="space-y-1">
-                  <h4 className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Destructive Operation Protocol</h4>
+                  <h4 className="text-[8px] font-black text-rose-400 uppercase tracking-widest">{txt.settings.resetWarning}</h4>
                   <p className="text-[8px] text-zinc-500 font-medium leading-relaxed uppercase">
                     Wipes transactions, budgets, ledger lines and sets accounts to starter templates.
                   </p>
@@ -543,36 +466,42 @@ export default function Settings({
         <div className="glass-card p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border-white/5 space-y-6">
           <div className="flex items-center gap-2">
             <Lock className="h-4 w-4 text-zinc-500" />
-            <h2 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Security & Nodes State</h2>
+            <h2 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{txt.settings.storage}</h2>
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <div className="flex items-center gap-2.5">
-                <Globe className="h-4 w-4 text-zinc-400" />
-                <span className="text-xs font-bold text-zinc-300">Authority Scopes</span>
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded bg-zinc-900 border border-white/5 text-zinc-400">
-                {isAdmin ? 'ROOT ACCREDITED' : 'SECURE NODE USER'}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <div className="flex items-center gap-2.5">
-                <RefreshCw className="h-4 w-4 text-zinc-400" />
-                <span className="text-xs font-bold text-zinc-300">Cloud Sync Protocol</span>
-              </div>
-              <span className="text-xs font-mono text-zinc-400">Firestore SSL Tunnel</span>
-            </div>
-
             <div className="flex items-center justify-between pb-1">
               <div className="flex items-center gap-2.5">
                 <FolderSync className="h-4 w-4 text-zinc-400" />
-                <span className="text-xs font-bold text-zinc-300">Persistent Storage Location</span>
+                <span className="text-xs font-bold text-zinc-300">{txt.settings.storage}</span>
               </div>
-              <span className="text-xs font-mono text-zinc-400">europe-west2 (Sandboxed ID)</span>
+              <span className="text-xs font-mono text-zinc-400">{txt.settings.storageValue}</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="mt-8 glass-card rounded-2xl border border-zinc-500/20 p-5 space-y-3 bg-zinc-900/40">
+        <div>
+          <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.aiKey}</h3>
+          <p className="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+            {txt.settings.aiKeyHint}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="password"
+            value={geminiKey}
+            onChange={(e) => { setGeminiKey(e.target.value); setKeySaved(false); }}
+            placeholder="AIza..."
+            className="flex-1 bg-zinc-950/50 border border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/30 transition-all"
+          />
+          <button
+            onClick={() => { setApiKey(geminiKey); setKeySaved(true); }}
+            className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-zinc-300 hover:bg-white/10 transition-all active:scale-95"
+          >
+            {keySaved ? txt.common.saved : txt.common.save}
+          </button>
         </div>
       </div>
 
@@ -580,10 +509,8 @@ export default function Settings({
         <div className="h-[350px]">
           <RemindersWidget 
             reminders={state.reminders || []}
-            onAddReminder={onAddReminder!}
-            onDeleteReminder={onDeleteReminder!}
-            accessToken={accessToken || null}
-            onRequiresAuth={onRequiresAuth!}
+            onAddReminder={onAddReminder}
+            onDeleteReminder={onDeleteReminder}
           />
         </div>
       </div>
