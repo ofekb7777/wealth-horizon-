@@ -500,7 +500,7 @@ export default function Settings({
           <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.language}</h3>
           <p className="text-[10px] text-zinc-500 mt-1 leading-relaxed">{txt.settings.languageHint}</p>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {LOCALES.map(item => (
             <button
               key={item.code}

@@ -10,7 +10,7 @@ import { en } from './en';
 export type Dictionary = typeof en;
 
 /** קודי השפות הנתמכות. */
-export type LocaleCode = 'en' | 'zh' | 'hi' | 'es' | 'ar' | 'he';
+export type LocaleCode = 'en' | 'he';
 
 export interface LocaleMeta {
   code: LocaleCode;

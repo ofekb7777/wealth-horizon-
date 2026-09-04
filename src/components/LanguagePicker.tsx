@@ -37,7 +37,7 @@ export default function LanguagePicker() {
         <p className="text-xs text-zinc-500 max-w-xs">{preview.subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-lg">
+      <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
         {LOCALES.map(item => {
           const active = item.code === picked;
           return (

@@ -20,10 +20,10 @@ const flatten = (obj, prefix = '') =>
 const en = flatten(getDictionary('en'));
 const enKeys = en.map(([k]) => k).sort();
 
-check('יש שש שפות', LOCALES.length === 6, `קיבלתי ${LOCALES.length}`);
+check('יש שתי שפות', LOCALES.length === 2, `קיבלתי ${LOCALES.length}`);
 check('אנגלית ראשונה — היא ברירת המחדל', LOCALES[0].code === 'en');
-check('עברית וערבית מסומנות RTL',
-  LOCALES.filter(l => l.dir === 'rtl').map(l => l.code).sort().join(',') === 'ar,he');
+check('עברית מסומנת RTL',
+  LOCALES.filter(l => l.dir === 'rtl').map(l => l.code).join(',') === 'he');
 check('לכל שפה יש שם בשפה עצמה', LOCALES.every(l => l.nativeName && l.englishName));
 
 for (const { code } of LOCALES) {
@@ -40,7 +40,7 @@ for (const { code } of LOCALES) {
 
   if (code !== 'en') {
     // מפתחות טכניים שנשארים זהים בכל שפה — לא עדות לתרגום חסר.
-    const SHARED = new Set(['screens.home', 'analytics.range3m', 'analytics.range6m']);
+    const SHARED = new Set(['analytics.range3m', 'analytics.range6m']);
     const untranslated = entries.filter(([k, v]) => {
       const enValue = en.find(([ek]) => ek === k)?.[1];
       return !SHARED.has(k) && !k.startsWith('categories.') && !k.startsWith('accountTypes.')

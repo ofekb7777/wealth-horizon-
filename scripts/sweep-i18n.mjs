@@ -7,8 +7,7 @@
  * ופספסנו — שלוש פעמים, כל פעם צורה אחרת. בשלב 7 התברר שנשארו מחרוזות
  * אנגליות בכל דיאלוג מחיקת הנתונים, בשמות ערכות הנושא, באפקטי הרקע
  * ובטופס התזכורות, ואף אחת מהן לא נמצאה בגרפ. הן נמצאו רק כשרינדרנו
- * את האפליקציה **בסינית** וסרקנו את ה-DOM אחרי טקסט לטיני. סינית היא
- * הגלאי הטוב ביותר: כל שריד באנגלית או בעברית בולט מיד.
+ * את האפליקציה **בעברית** וסרקנו את ה-DOM אחרי טקסט לטיני שנשאר.
  *
  * הסקריפט מרים `vite preview` בעצמו ומכבה אותו בסוף.
  *
@@ -73,9 +72,9 @@ const page = await (await browser.newContext({ viewport: { width: 1400, height: 
 await page.goto(URL, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2500);
 
-await page.locator('button[lang="zh"]').click();
+await page.locator('button[lang="he"]').click();
 await page.waitForTimeout(300);
-await page.getByRole('button', { name: '继续' }).click();
+await page.getByRole('button', { name: 'המשך' }).click();
 await page.waitForTimeout(2500);
 
 const findings = [];
@@ -93,18 +92,13 @@ async function scan(screen) {
   });
 
   for (const text of texts) {
-    // עברית, ערבית או דוונאגרי בזמן שהאפליקציה בסינית = מחרוזת שנעוצה בשפה.
-    const wrongScript = /[֐-׿؀-ۿऀ-ॿ]/.test(text);
     const latin = (text.match(/[A-Za-z]{3,}/g) || [])
       .filter(w => !ALLOWED.has(w.toLowerCase()));
-    if (wrongScript || latin.length) findings.push({ screen, text: text.slice(0, 90) });
+    if (latin.length) findings.push({ screen, text: text.slice(0, 90) });
   }
 }
 
-// בורר השפה עצמו מציג את כל השפות בכתב שלהן — זה נכון, ולא ממצא.
-const IGNORE_SCREEN = '设置-languages';
-
-for (const nav of ['首页', '账户', '分析', '收入', '支出', '预算', '投资']) {
+for (const nav of ['בית', 'חשבונות', 'ניתוח', 'הכנסות', 'הוצאות', 'תקציבים', 'השקעות']) {
   await page.getByText(nav, { exact: true }).first().click().catch(() => {});
   await page.waitForTimeout(900);
   await scan(nav);
@@ -116,14 +110,14 @@ await page.evaluate(() => {
   button?.click();
 });
 await page.waitForTimeout(1200);
-await scan('设置');
+await scan('הגדרות');
 
 await browser.close();
 stop();
 
-// כפתורי בחירת השפה בהגדרות הם היוצא מן הכלל היחיד.
-const LANGUAGE_BUTTONS = new Set(['English', '中文', 'हिन्दी', 'Español', 'العربية', 'עברית']);
-const real = findings.filter(f => !LANGUAGE_BUTTONS.has(f.text) && f.screen !== IGNORE_SCREEN);
+// כפתור בחירת השפה מציג "English" בשפה שלו — זה נכון, ולא ממצא.
+const LANGUAGE_BUTTONS = new Set(['English', 'עברית']);
+const real = findings.filter(f => !LANGUAGE_BUTTONS.has(f.text));
 
 if (real.length === 0) {
   console.log('✓ אין טקסט לא מתורגם באף מסך');

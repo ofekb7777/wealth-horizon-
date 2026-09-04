@@ -1,29 +1,23 @@
 import { Dictionary, LocaleCode, LocaleMeta } from './types';
 import { en } from './en';
-import { zh } from './zh';
-import { hi } from './hi';
-import { es } from './es';
-import { ar } from './ar';
 import { he } from './he';
 
 export type { Dictionary, LocaleCode, LocaleMeta } from './types';
 
 /**
- * השפות הנתמכות.
+ * השפות הנתמכות: אנגלית ועברית.
  *
- * חמש הראשונות הן חמש השפות המדוברות בעולם, ועברית שישית — האפליקציה
- * נכתבה בה, ואופק משתמש בה. הסדר כאן הוא הסדר שבו הן מוצגות.
+ * **התשתית בנויה לריבוי שפות בכוונה.** בשלב 7 היו כאן שש, ואופק ביקש
+ * לצמצם לשתיים שהוא באמת משתמש בהן. אם בעתיד תפורסם לקהל רחב, הוספת
+ * שפה היא קובץ מילון אחד ושורה אחת כאן — `Dictionary` יאכוף שהמילון
+ * מלא, ו-`npm run sweep:i18n` יתפוס טקסט שלא עבר.
  */
 export const LOCALES: readonly LocaleMeta[] = [
-  { code: 'en', nativeName: 'English',  englishName: 'English', dir: 'ltr' },
-  { code: 'zh', nativeName: '中文',      englishName: 'Chinese', dir: 'ltr' },
-  { code: 'hi', nativeName: 'हिन्दी',     englishName: 'Hindi',   dir: 'ltr' },
-  { code: 'es', nativeName: 'Español',  englishName: 'Spanish', dir: 'ltr' },
-  { code: 'ar', nativeName: 'العربية',   englishName: 'Arabic',  dir: 'rtl' },
-  { code: 'he', nativeName: 'עברית',    englishName: 'Hebrew',  dir: 'rtl' },
+  { code: 'en', nativeName: 'English', englishName: 'English', dir: 'ltr' },
+  { code: 'he', nativeName: 'עברית',   englishName: 'Hebrew',  dir: 'rtl' },
 ];
 
-const DICTIONARIES: Record<LocaleCode, Dictionary> = { en, zh, hi, es, ar, he };
+const DICTIONARIES: Record<LocaleCode, Dictionary> = { en, he };
 
 export const DEFAULT_LOCALE: LocaleCode = 'en';
 
@@ -61,9 +55,8 @@ export const trendLabel = (dict: Dictionary, rating: string): string =>
  * בעברית "1 שורות דולגו" שגוי — מספר אחד דורש צורת יחיד. פונקציה קטנה
  * במקום לפזר תנאים בקומפוננטות.
  *
- * זה מכסה שתי צורות בלבד, וזה מכוון: ערבית מבחינה בשש. במקום להוסיף
- * מנוע ICU שלם בשביל ארבע מחרוזות, המחרוזות בערבית ובהינדי נוסחו כך
- * שהן נכונות בשתי הצורות.
+ * שתי צורות מספיקות לאנגלית ולעברית. שפה שמבחינה ביותר (ערבית מבחינה
+ * בשש) תדרוש כאן משהו אמיתי יותר — נקודה לזכור אם מוסיפים שפות.
  */
 export const plural = (count: number, one: string, many: string): string =>
   count === 1 ? one : many.replace(/%1\$s/g, String(count));
