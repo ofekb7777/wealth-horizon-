@@ -1,4 +1,5 @@
 import { CapacitorHttp } from '@capacitor/core';
+import { tickerCatalog } from '../data/tickers';
 
 /**
  * נתוני שוק — נקראים ישירות מהמכשיר, בלי שרת באמצע.
@@ -13,6 +14,10 @@ import { CapacitorHttp } from '@capacitor/core';
  *
  * הערה לדפדפן: Yahoo לא מאפשר CORS, ולכן בפיתוח בדפדפן הקריאות ייכשלו
  * ויוצגו מחירים מוטמנים. באנדרואיד זה עובד. זה מכוון ולא באג.
+ *
+ * **חיפוש סימולים לא תלוי ב-Yahoo בכלל.** הוא עונה מהקטלוג הארוז
+ * (`data/tickers.ts`) ורק מוסיף מעליו תוצאות רשת כשהן זמינות. עד שלב 7
+ * הוא היה תלוי בו לגמרי, ולכן פשוט לא עבד בדפדפן.
  */
 
 const YAHOO = 'https://query1.finance.yahoo.com';
@@ -127,48 +132,100 @@ export interface SearchResult {
   shortname: string;
   exchange: string;
   typeDisp: string;
-  history: { date: Date; price: number }[];
 }
 
-/** חיפוש טיקרים. בלי רשת מחזיר רשימה ריקה — לא שגיאה. */
+/**
+ * דירוג התאמה בין שאילתה לנייר ערך. מחזיר 0 כשאין התאמה בכלל.
+ *
+ * הסימול שוקל יותר מהשם: מי שמקליד "SPY" מחפש את SPY עצמו, לא כל
+ * קרן שהמילה מופיעה בשמה.
+ */
+function matchScore(upperQuery: string, symbol: string, name: string): number {
+  const sym = symbol.toUpperCase();
+  const nm = name.toUpperCase();
+  if (sym === upperQuery) return 100;
+  if (nm === upperQuery) return 90;
+  if (sym.startsWith(upperQuery)) return 80;
+  if (nm.startsWith(upperQuery)) return 70;
+  if (sym.includes(upperQuery)) return 60;
+  if (nm.includes(upperQuery)) return 50;
+  return 0;
+}
+
+const LIMIT = 10;
+
+function rank(items: (SearchResult & { score: number })[]): SearchResult[] {
+  return items
+    .sort((a, b) => b.score - a.score || a.symbol.localeCompare(b.symbol))
+    .slice(0, LIMIT)
+    .map(({ score: _score, ...rest }) => rest);
+}
+
+/**
+ * חיפוש בקטלוג הארוז. **סינכרוני, בלי רשת, אף פעם לא נכשל.**
+ *
+ * זו הסיבה שהחיפוש עובד בדפדפן (ש-Yahoo חוסם לו CORS), במצב טיסה,
+ * וכשמגיעים לחסימת קצב מצד Yahoo. עד היום החיפוש היה תלוי לגמרי
+ * ברשת ולכן פשוט לא עבד בדפדפן.
+ */
+export function searchCatalog(query: string): SearchResult[] {
+  const upper = query.trim().toUpperCase();
+  if (!upper) return [];
+
+  const hits: (SearchResult & { score: number })[] = [];
+  for (const { symbol, name, exchange } of tickerCatalog()) {
+    const score = matchScore(upper, symbol, name);
+    if (score > 0) {
+      hits.push({ symbol, shortname: name, exchange, typeDisp: exchange, score });
+    }
+  }
+  return rank(hits);
+}
+
+/**
+ * חיפוש מלא: הקטלוג המקומי, ומעליו תוצאות Yahoo כשיש רשת.
+ *
+ * Yahoo מוסיף ניירות שלא נכנסו לקטלוג (חברות קטנות, בורסות זרות).
+ * כשהוא לא זמין פשוט נשארים עם המקומי — בלי שגיאה ובלי רשימה ריקה.
+ *
+ * הערה: קודם נמשך כאן גם גרף שנתי לכל אחת מעשר התוצאות. אף אחד מהם
+ * לא הוצג בשום מקום (התצוגה היא סימול/שם/בורסה בלבד), והם הפכו כל
+ * הקלדה ל-11 בקשות רשת — מספיק כדי לגרור חסימת קצב מ-Yahoo, שבתורה
+ * החזירה "אין תוצאות". הם נמחקו.
+ */
 export async function searchTickers(query: string): Promise<SearchResult[]> {
   const q = query.trim();
   if (!q) return [];
 
-  const json = await getJson(`${YAHOO}/v1/finance/search`, { q, quotesCount: '10' });
+  const upper = q.toUpperCase();
+  const local = searchCatalog(q);
+  const seen = new Set(local.map(r => r.symbol.toUpperCase()));
+
+  const json = await getJson(`${YAHOO}/v1/finance/search`, {
+    q, quotesCount: String(LIMIT), newsCount: '0',
+  });
   const quotes: any[] = json?.quotes ?? [];
 
-  const upper = q.toUpperCase();
-  const score = (item: { symbol: string; shortname: string }) => {
-    const sym = item.symbol.toUpperCase();
-    const name = item.shortname.toUpperCase();
-    if (sym === upper) return 100;
-    if (name === upper) return 90;
-    if (sym.startsWith(upper)) return 80;
-    if (name.startsWith(upper)) return 70;
-    if (sym.includes(upper)) return 60;
-    if (name.includes(upper)) return 50;
-    return 0;
-  };
-
-  const mapped = quotes
-    .map(q2 => ({
-      symbol: q2.symbol as string,
-      shortname: (q2.shortname || q2.longname || q2.symbol) as string,
-      exchange: (q2.exchange || 'Market') as string,
-      typeDisp: (q2.typeDisp || q2.quoteType || 'Asset') as string,
-    }))
-    .filter(q2 => q2.symbol)
-    .sort((a, b) => score(b) - score(a) || a.symbol.localeCompare(b.symbol))
-    .slice(0, 10);
-
-  // היסטוריה שנתית לכל תוצאה, לגרף התצוגה המקדימה.
-  return Promise.all(mapped.map(async (item) => {
-    const chart = await getJson(`${YAHOO}/v8/finance/chart/${encodeURIComponent(item.symbol)}`, {
-      interval: '1wk', range: '1y',
-    });
-    return { ...item, history: chart ? historyFromChart(chart) : [] };
+  const merged: (SearchResult & { score: number })[] = local.map(r => ({
+    ...r,
+    score: matchScore(upper, r.symbol, r.shortname),
   }));
+
+  for (const quote of quotes) {
+    const symbol = quote?.symbol as string | undefined;
+    if (!symbol || seen.has(symbol.toUpperCase())) continue;
+    seen.add(symbol.toUpperCase());
+    const shortname = (quote.shortname || quote.longname || symbol) as string;
+    merged.push({
+      symbol,
+      shortname,
+      exchange: (quote.exchange || 'Market') as string,
+      typeDisp: (quote.typeDisp || quote.quoteType || 'Asset') as string,
+      score: matchScore(upper, symbol, shortname),
+    });
+  }
+
+  return rank(merged);
 }
 
 export interface TickerAnalytics {

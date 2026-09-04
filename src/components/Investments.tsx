@@ -1,6 +1,6 @@
 import { Plus, Trash2, Search, RefreshCcw, ExternalLink, TrendingUp, TrendingDown, Target, Zap, Activity } from 'lucide-react';
 import { txt, trendLabel } from '../i18n/he';
-import { fetchPrices, fetchAnalytics as fetchTickerAnalytics, searchTickers } from '../services/marketData';
+import { fetchPrices, fetchAnalytics as fetchTickerAnalytics, searchCatalog, searchTickers } from '../services/marketData';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Investment, Currency, CURRENCIES } from '../types';
 import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
@@ -37,7 +37,6 @@ export default function Investments({
   const symbol = CURRENCIES[currency].symbol;
   const rate = CURRENCIES[currency].rate;
 
-  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [pricingStatus, setPricingStatus] = useState<Record<string, 'up' | 'down' | 'neutral'>>({});
   const prevPrices = useRef<Record<string, number>>({});
 
@@ -82,33 +81,42 @@ export default function Investments({
     loadAnalytics();
   }, [investments.length]); // Refetch if count changes, otherwise rely on manual sync if needed
 
-  // Debounce search
+  /**
+   * החיפוש עובד בשני שלבים.
+   *
+   * הקטלוג הארוז עונה **מיידית בכל הקלדה**, בלי רשת ובלי השהיה. רק
+   * אחר כך, בהשהיה, Yahoo מוסיף מעליו ניירות שלא בקטלוג.
+   *
+   * `latestQuery` הוא השומר על הסדר: הקלדה עם עצירה באמצע ("SP" ואז
+   * "Y") שולחת שתי בקשות, והאיטית יכולה לחזור אחרי המהירה. בלי הבדיקה
+   * הזאת אותה מילה הייתה מחזירה תוצאה שונה תלוי בקצב ההקלדה.
+   */
+  const latestQuery = useRef('');
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchQuery.trim()) {
-        performSearch(searchQuery);
-      } else {
-        setTickerResults([]);
-        setErrorDetails(null);
+    const q = searchQuery.trim();
+    latestQuery.current = q;
+
+    if (!q) {
+      setTickerResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setTickerResults(searchCatalog(q));
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const merged = await searchTickers(q);
+        if (latestQuery.current === q) setTickerResults(merged);
+      } finally {
+        if (latestQuery.current === q) setIsSearching(false);
       }
     }, 400);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  const performSearch = async (val: string) => {
-    setIsSearching(true);
-    setErrorDetails(null);
-    try {
-      const results = await searchTickers(val);
-      setTickerResults(results);
-      if (results.length === 0) {
-        setErrorDetails('No results. Ticker search needs an internet connection.');
-      }
-    } finally {
-      setIsSearching(false);
-    }
-  };
 
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
@@ -243,17 +251,14 @@ export default function Investments({
                       </button>
                     ))}
                   </>
-                ) : errorDetails ? (
-                  <div className="p-10 glass-card rounded-[2.5rem] text-center border-rose-500/20">
-                    <div className="text-zinc-100 font-black uppercase tracking-widest mb-2">{txt.investments.searchNeedsNetwork}</div>
-                    <div className="text-rose-400 text-[10px] font-mono">{errorDetails}</div>
-                  </div>
-                ) : searchQuery ? (
+                ) : searchQuery.trim() && !isSearching ? (
                   <div className="p-10 text-center text-zinc-500">
                     <Search className="h-8 w-8 mx-auto mb-4 text-zinc-800" />
-                    <p className="font-black uppercase tracking-widest text-sm">No results for "{searchQuery}"</p>
+                    <p className="font-black uppercase tracking-widest text-sm">
+                      {txt.investments.noResultsFor} "{searchQuery}"
+                    </p>
                   </div>
-                ) : (
+                ) : searchQuery.trim() ? null : (
                   <div className="space-y-6">
                      <h4 className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em] px-2">{txt.investments.performance}</h4>
                      <div className="grid grid-cols-2 gap-4">
