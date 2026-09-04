@@ -14,6 +14,7 @@ import { useTheme, ThemeProvider } from './context/ThemeContext.tsx';
 import { VersionProvider } from './context/VersionContext.tsx';
 import { repository, initDatabase, wipeEverything } from './data';
 import { fetchPrices } from './services/marketData.ts';
+import { BrokerPosition } from './services/broker';
 import { initStatusBar, hideSplashScreen, onAndroidBack } from './native';
 import { useI18n } from './context/LanguageContext';
 import LanguagePicker from './components/LanguagePicker.tsx';
@@ -431,6 +432,53 @@ export default function App() {
     repository.addInvestment(newInvestment);
   }, []);
 
+  /**
+   * מחיל אחזקות שנמשכו מהברוקר על התיק.
+   *
+   * **התאמה לפי סימול, ואף פעם לא מחיקה.** אחזקה שקיימת מתעדכנת ושומרת
+   * את ה-id שלה; אחזקה חדשה נוספת. מה שלא הופיע בדוח נשאר כמו שהוא —
+   * ייתכן שהוא מוחזק אצל ברוקר אחר, ומחיקה שקטה של נתונים פיננסיים היא
+   * בדיוק מה שלא רוצים.
+   */
+  const handleApplyBrokerPositions = useCallback((positions: BrokerPosition[]) => {
+    setState(prev => {
+      const byTicker = new Map<string, Investment>(
+        prev.investments.map(inv => [inv.ticker.trim().toUpperCase(), inv] as const),
+      );
+
+      const next = [...prev.investments];
+      for (const position of positions) {
+        const key = position.symbol.trim().toUpperCase();
+        const existing = byTicker.get(key);
+
+        const merged: Investment = existing
+          ? {
+              ...existing,
+              name: position.name || existing.name,
+              exchange: position.exchange || existing.exchange,
+              shares: position.shares,
+              avgPrice: position.avgPrice || existing.avgPrice,
+              currentPrice: position.currentPrice || existing.currentPrice,
+            }
+          : {
+              id: Math.random().toString(36).substr(2, 9),
+              ticker: position.symbol,
+              name: position.name,
+              exchange: position.exchange,
+              shares: position.shares,
+              avgPrice: position.avgPrice,
+              currentPrice: position.currentPrice,
+            };
+
+        if (existing) next[next.indexOf(existing)] = merged;
+        else next.push(merged);
+
+        repository.updateInvestment(merged);
+      }
+      return { ...prev, investments: next };
+    });
+  }, []);
+
   const handleDeleteInvestment = useCallback((id: string) => {
     setState(prev => ({ ...prev, investments: prev.investments.filter(t => t.id !== id) }));
     repository.deleteInvestment(id);
@@ -739,6 +787,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
               onUpdateInvestment={handleUpdateInvestment}
               onAddInvestment={handleAddInvestment}
               onDeleteInvestment={handleDeleteInvestment}
+              onApplyBrokerPositions={handleApplyBrokerPositions}
               currency={currency}
             />
           )}

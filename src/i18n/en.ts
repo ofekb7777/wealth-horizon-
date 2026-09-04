@@ -262,6 +262,27 @@ export const en = {
     storageValue: 'Local SQLite on this device',
   },
 
+  // --- Broker (Interactive Brokers, read-only) ---
+  broker: {
+    title: 'Broker',
+    subtitle: 'Interactive Brokers, read-only',
+    readOnly: 'Read-only. This app can place no trades and move no money — it only reads your positions.',
+    hint: 'In Client Portal: Performance & Reports \u2192 Flex Queries. Create an Activity Flex query that includes Open Positions, then enable the Flex Web Service to get a token.',
+    token: 'Flex token',
+    queryId: 'Query ID',
+    sync: 'Sync from broker',
+    syncing: 'Fetching from your broker...',
+    noCredentials: 'Add your broker token in settings first.',
+    failed: 'Could not fetch from the broker.',
+    nothing: 'The report came back with no open positions.',
+    account: 'Account',
+    willUpdate: '%1$s to update',
+    willAdd: '%1$s to add',
+    apply: 'Update my portfolio',
+    done: 'Portfolio updated',
+    browserNote: 'Syncing works on your phone. In a desktop browser your broker blocks the request.',
+  },
+
   // --- Bank import ---
   import: {
     title: 'Import from a file',

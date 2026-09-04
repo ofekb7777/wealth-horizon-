@@ -22,6 +22,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import RemindersWidget from './RemindersWidget';
 import { AiProvider, getApiKey, getProvider, setApiKey, setProvider } from '../services/aiService';
+import { getBrokerCredentials, setBrokerCredentials } from '../services/broker';
 import { LOCALES } from '../i18n';
 
 interface SettingsProps {
@@ -61,6 +62,10 @@ export default function Settings({
   const [aiProvider, setAiProviderState] = useState<AiProvider>(() => getProvider());
   const [apiKeyDraft, setApiKeyDraft] = useState(() => getApiKey());
   const [keySaved, setKeySaved] = useState(false);
+
+  const [brokerToken, setBrokerToken] = useState(() => getBrokerCredentials().token);
+  const [brokerQueryId, setBrokerQueryId] = useState(() => getBrokerCredentials().queryId);
+  const [brokerSaved, setBrokerSaved] = useState(false);
 
   // החלפת ספק טוענת את המפתח **שלו**, לא משאירה את זה של הקודם בשדה.
   const switchProvider = (next: AiProvider) => {
@@ -567,6 +572,47 @@ export default function Settings({
             {keySaved ? txt.common.saved : txt.common.save}
           </button>
         </div>
+      </div>
+
+      <div className="mt-8 glass-card rounded-2xl border border-zinc-500/20 p-5 space-y-3 bg-zinc-900/40">
+        <div>
+          <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.broker.title}</h3>
+          <p className="text-[10px] text-zinc-500 mt-1 leading-relaxed">{txt.broker.subtitle}</p>
+          <p className="text-[10px] text-teal-300/80 mt-2 leading-relaxed">{txt.broker.readOnly}</p>
+          <p className="text-[10px] text-zinc-600 mt-2 leading-relaxed" dir="ltr">{txt.broker.hint}</p>
+        </div>
+
+        <div className="space-y-2">
+          <input
+            type="password"
+            value={brokerToken}
+            onChange={(e) => { setBrokerToken(e.target.value); setBrokerSaved(false); }}
+            placeholder={txt.broker.token}
+            dir="ltr"
+            className="w-full bg-zinc-950/50 border border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/30 transition-all"
+          />
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={brokerQueryId}
+              onChange={(e) => { setBrokerQueryId(e.target.value); setBrokerSaved(false); }}
+              placeholder={txt.broker.queryId}
+              dir="ltr"
+              className="flex-1 bg-zinc-950/50 border border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/30 transition-all"
+            />
+            <button
+              onClick={() => {
+                setBrokerCredentials({ token: brokerToken, queryId: brokerQueryId });
+                setBrokerSaved(true);
+              }}
+              className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-zinc-300 hover:bg-white/10 transition-all active:scale-95"
+            >
+              {brokerSaved ? txt.common.saved : txt.common.save}
+            </button>
+          </div>
+        </div>
+
+        <p className="text-[9px] text-zinc-600 leading-relaxed">{txt.broker.browserNote}</p>
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">

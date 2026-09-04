@@ -13,12 +13,13 @@
     "test:widget": "esbuild src/widget/snapshot.ts --bundle --format=cjs --platform=node --outfile=.test-build/snapshot.cjs --log-level=error && node src/widget/__tests__/snapshot.test.cjs",
     "verify:android": "python3 scripts/verify-android.py",
     "test:import": "esbuild src/services/bankImport.ts --bundle --format=cjs --platform=node --external:xlsx --outfile=.test-build/bankImport.cjs --log-level=error && node src/services/__tests__/bankImport.test.cjs",
-    "test": "npm run test:widget && npm run test:import && npm run test:search && npm run test:i18n",
+    "test": "npm run test:widget && npm run test:import && npm run test:search && npm run test:i18n && npm run test:broker",
     "check:java": "bash scripts/check-java.sh",
     "build:demo": "vite build --config vite.demo.config.ts",
     "test:search": "esbuild src/services/marketData.ts --bundle --format=cjs --platform=node --outfile=.test-build/marketData.cjs --log-level=error && node src/services/__tests__/marketData.test.cjs",
     "test:i18n": "esbuild src/i18n/index.ts --bundle --format=cjs --platform=node --outfile=.test-build/i18n.cjs --log-level=error && node src/i18n/__tests__/locales.test.cjs",
-    "sweep:i18n": "node scripts/sweep-i18n.mjs"
+    "sweep:i18n": "node scripts/sweep-i18n.mjs",
+    "test:broker": "esbuild src/services/broker.ts --bundle --format=cjs --platform=node --outfile=.test-build/broker.cjs --log-level=error && node src/services/__tests__/broker.test.cjs"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.1",
@@ -33,6 +34,7 @@
     "@fontsource/outfit": "^5.3.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
+    "fast-xml-parser": "^5.11.1",
     "jeep-sqlite": "^2.8.0",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",

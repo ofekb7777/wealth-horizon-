@@ -259,6 +259,27 @@ export const he: Dictionary = {
     storageValue: 'SQLite מקומי על המכשיר',
   },
 
+  // --- ברוקר (Interactive Brokers, קריאה בלבד) ---
+  broker: {
+    title: 'ברוקר',
+    subtitle: 'Interactive Brokers, קריאה בלבד',
+    readOnly: 'קריאה בלבד. האפליקציה לא יכולה לבצע פעולות ולא להזיז כסף — היא רק קוראת את האחזקות.',
+    hint: 'ב-Client Portal: Performance & Reports \u2190 Flex Queries. צור שאילתת Activity Flex שכוללת Open Positions, ואז הפעל את Flex Web Service כדי לקבל טוקן.',
+    token: 'טוקן Flex',
+    queryId: 'מזהה שאילתה',
+    sync: 'משוך מהברוקר',
+    syncing: 'מושך מהברוקר...',
+    noCredentials: 'הזן קודם טוקן ברוקר בהגדרות.',
+    failed: 'לא הצלחתי למשוך מהברוקר.',
+    nothing: 'הדוח חזר בלי אחזקות פתוחות.',
+    account: 'חשבון',
+    willUpdate: '%1$s לעדכון',
+    willAdd: '%1$s להוספה',
+    apply: 'עדכן את התיק',
+    done: 'התיק עודכן',
+    browserNote: 'המשיכה עובדת בטלפון. בדפדפן במחשב הברוקר חוסם את הבקשה.',
+  },
+
   // --- ייבוא מהבנק ---
   import: {
     title: 'ייבוא מקובץ',

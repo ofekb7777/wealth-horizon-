@@ -28,6 +28,20 @@ const ALLOWED = new Set([
   'english', 'chinese', 'hindi', 'spanish', 'arabic', 'hebrew', 'espanol',
 ]);
 
+/*
+ * ביטויים שנשארים באנגלית **בכוונה**: שמות מוצר, ונתיבים בתפריט של
+ * ממשק חיצוני. ההנחיה "Performance & Reports \u2192 Flex Queries" חייבת
+ * להיות באנגלית כי ככה זה כתוב אצל IBKR — תרגום שלה היה הופך אותה
+ * לחסרת תועלת.
+ *
+ * מסירים אותם מהטקסט לפני הבדיקה במקום לאשר את המחרוזת כולה, כדי
+ * שאנגלית **אחרת** באותה שורה עדיין תיתפס.
+ */
+const ALLOWED_PHRASES = [
+  'Interactive Brokers', 'Client Portal', 'Performance & Reports',
+  'Flex Queries', 'Flex Web Service', 'Activity Flex', 'Open Positions',
+];
+
 let playwright;
 try {
   playwright = await import('playwright');
@@ -92,7 +106,9 @@ async function scan(screen) {
   });
 
   for (const text of texts) {
-    const latin = (text.match(/[A-Za-z]{3,}/g) || [])
+    let stripped = text;
+    for (const phrase of ALLOWED_PHRASES) stripped = stripped.split(phrase).join(' ');
+    const latin = (stripped.match(/[A-Za-z]{3,}/g) || [])
       .filter(w => !ALLOWED.has(w.toLowerCase()));
     if (latin.length) findings.push({ screen, text: text.slice(0, 90) });
   }

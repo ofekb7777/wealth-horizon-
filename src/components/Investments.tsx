@@ -1,6 +1,8 @@
 import { Plus, Trash2, Search, RefreshCcw, ExternalLink, TrendingUp, TrendingDown, Target, Zap, Activity } from 'lucide-react';
 import { useI18n } from '../context/LanguageContext';
 import { fetchPrices, fetchAnalytics as fetchTickerAnalytics, searchCatalog, searchTickers } from '../services/marketData';
+import { BrokerPosition, fetchBrokerPositions, hasBrokerCredentials } from '../services/broker';
+import { Download } from 'lucide-react';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Investment, Currency, CURRENCIES } from '../types';
 import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
@@ -13,6 +15,7 @@ interface InvestmentsProps {
   onUpdateInvestment: (id: string, field: keyof Investment, value: any) => void;
   onAddInvestment: (tickerData?: any) => void;
   onDeleteInvestment: (id: string) => void;
+  onApplyBrokerPositions: (positions: BrokerPosition[]) => void;
   currency: Currency;
 }
 
@@ -22,6 +25,7 @@ export default function Investments({
   onUpdateInvestment,
   onAddInvestment,
   onDeleteInvestment,
+  onApplyBrokerPositions,
   currency
 }: InvestmentsProps) {
   const { txt, trendLabel } = useI18n();
@@ -92,6 +96,66 @@ export default function Investments({
    * "Y") שולחת שתי בקשות, והאיטית יכולה לחזור אחרי המהירה. בלי הבדיקה
    * הזאת אותה מילה הייתה מחזירה תוצאה שונה תלוי בקצב ההקלדה.
    */
+  /*
+   * משיכה מהברוקר.
+   *
+   * שני שלבים בכוונה: מושכים, מראים מה עומד להשתנות, ורק אז מחילים.
+   * זה נתון פיננסי — עדכון שקט של כמות ומחיר קנייה בלי שהמשתמש רואה
+   * מה זז הוא בדיוק מה שלא רוצים. אותו עיקרון של דיאלוג הייבוא מהבנק.
+   */
+  const [brokerBusy, setBrokerBusy] = useState(false);
+  /*
+   * כותרת ופירוט בנפרד: הכותרת מתורגמת, והפירוט הוא ההודעה המקורית של
+   * IBKR באנגלית — היא מזהה את התקלה בפועל ולכן מוצגת כלשונה.
+   */
+  const [brokerError, setBrokerError] = useState<{ title: string; detail?: string } | null>(null);
+  const [brokerPending, setBrokerPending] = useState<BrokerPosition[] | null>(null);
+  const [brokerAccount, setBrokerAccount] = useState('');
+  const [brokerDone, setBrokerDone] = useState(false);
+
+  const owned = useMemo(
+    () => new Set(investments.map(i => i.ticker.trim().toUpperCase())),
+    [investments],
+  );
+  const pendingUpdates = (brokerPending || []).filter(p => owned.has(p.symbol.trim().toUpperCase()));
+  const pendingAdds = (brokerPending || []).filter(p => !owned.has(p.symbol.trim().toUpperCase()));
+
+  const runBrokerSync = async () => {
+    setBrokerBusy(true);
+    setBrokerError(null);
+    setBrokerDone(false);
+    setBrokerPending(null);
+    try {
+      if (!hasBrokerCredentials()) {
+        setBrokerError({ title: txt.broker.noCredentials });
+        return;
+      }
+      const result = await fetchBrokerPositions();
+      if (result.ok === false) {
+        setBrokerError({
+          title: txt.broker.failed,
+          detail: `[${result.code}] ${result.message}`,
+        });
+        return;
+      }
+      if (result.positions.length === 0) {
+        setBrokerError({ title: txt.broker.nothing });
+        return;
+      }
+      setBrokerAccount(result.accountId);
+      setBrokerPending(result.positions);
+    } finally {
+      setBrokerBusy(false);
+    }
+  };
+
+  const applyBrokerSync = () => {
+    if (!brokerPending) return;
+    onApplyBrokerPositions(brokerPending);
+    setBrokerPending(null);
+    setBrokerDone(true);
+  };
+
   const latestQuery = useRef('');
 
   useEffect(() => {
@@ -308,7 +372,7 @@ export default function Investments({
                 {lastSynced && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-teal-500/10 rounded-full border border-teal-500/20">
                     <RefreshCcw className="h-3 w-3 text-teal-350 animate-pulse" />
-                    <span className="text-xs font-black text-teal-350 uppercase tracking-widest">Active Sync: {lastSynced}</span>
+                    <span className="text-xs font-black text-teal-350 uppercase tracking-widest">{txt.investments.lastUpdated} {lastSynced}</span>
                   </div>
                 )}
               </div>
@@ -347,8 +411,103 @@ export default function Investments({
                   </button>
                 ))}
               </div>
+
             </div>
           </div>
+
+          {/*
+            * הכפתור יושב מחוץ לסרגל שגולל אופקית בכוונה. כשהוא היה בתוכו
+            * הוא הרחיב אותו מעבר לרוחב המסך, וגלילה אחת החביאה את כותרת
+            * העמוד מאחורי הסרגל הצדדי.
+            */}
+          <div>
+            <button
+              onClick={runBrokerSync}
+              disabled={brokerBusy}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900/50 border border-white/5 backdrop-blur-xl text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-teal-300 hover:border-teal-500/40 transition-all disabled:opacity-50 max-w-full"
+            >
+              <Download className={`h-4 w-4 shrink-0 ${brokerBusy ? 'animate-pulse' : ''}`} />
+              <span className="truncate">{brokerBusy ? txt.broker.syncing : txt.broker.sync}</span>
+            </button>
+          </div>
+
+          {(brokerError || brokerPending || brokerDone) && (
+            <div className="glass-card rounded-[2rem] p-6 border border-white/5 space-y-4">
+              {brokerError && (
+                <>
+                  <p className="text-xs font-black uppercase tracking-widest text-rose-400">
+                    {brokerError.title}
+                  </p>
+                  {brokerError.detail && (
+                    <>
+                      <p className="text-[10px] text-zinc-500 font-mono break-words" dir="ltr">
+                        {brokerError.detail}
+                      </p>
+                      <p className="text-[10px] text-zinc-600">{txt.broker.browserNote}</p>
+                    </>
+                  )}
+                </>
+              )}
+
+              {brokerDone && (
+                <p className="text-xs font-black uppercase tracking-widest text-teal-300">
+                  {txt.broker.done}
+                </p>
+              )}
+
+              {brokerPending && (
+                <>
+                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                    <span className="text-xs font-black uppercase tracking-widest text-zinc-200">
+                      {txt.broker.title}
+                    </span>
+                    {brokerAccount && (
+                      <span className="text-[10px] text-zinc-500 font-mono" dir="ltr">
+                        {txt.broker.account} {brokerAccount}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-[10px] font-bold uppercase tracking-widest">
+                    <span className="text-teal-300">
+                      {txt.broker.willUpdate.replace('%1$s', String(pendingUpdates.length))}
+                    </span>
+                    <span className="text-pink-400">
+                      {txt.broker.willAdd.replace('%1$s', String(pendingAdds.length))}
+                    </span>
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto space-y-1 hide-scrollbar">
+                    {brokerPending.map(p => (
+                      <div key={p.symbol} className="flex items-center justify-between gap-4 text-[11px] py-1 border-b border-white/5">
+                        <span className="font-black text-zinc-200" dir="ltr">{p.symbol}</span>
+                        <span className="text-zinc-500 font-mono" dir="ltr">
+                          {p.shares} &times; {symbol}{p.currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={applyBrokerSync}
+                      className="flex-1 py-2.5 rounded-xl bg-teal-500/20 border border-teal-500/40 text-teal-200 text-[10px] font-black uppercase tracking-widest hover:bg-teal-500/30 transition-all active:scale-95"
+                    >
+                      {txt.broker.apply}
+                    </button>
+                    <button
+                      onClick={() => setBrokerPending(null)}
+                      className="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all active:scale-95"
+                    >
+                      {txt.common.cancel}
+                    </button>
+                  </div>
+
+                  <p className="text-[9px] text-zinc-600 leading-relaxed">{txt.broker.readOnly}</p>
+                </>
+              )}
+            </div>
+          )}
 
           <div className="space-y-6">
           {filteredInvestments.map((t) => {
