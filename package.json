@@ -17,7 +17,8 @@
     "check:java": "bash scripts/check-java.sh",
     "build:demo": "vite build --config vite.demo.config.ts",
     "test:search": "esbuild src/services/marketData.ts --bundle --format=cjs --platform=node --outfile=.test-build/marketData.cjs --log-level=error && node src/services/__tests__/marketData.test.cjs",
-    "test:i18n": "esbuild src/i18n/index.ts --bundle --format=cjs --platform=node --outfile=.test-build/i18n.cjs --log-level=error && node src/i18n/__tests__/locales.test.cjs"
+    "test:i18n": "esbuild src/i18n/index.ts --bundle --format=cjs --platform=node --outfile=.test-build/i18n.cjs --log-level=error && node src/i18n/__tests__/locales.test.cjs",
+    "sweep:i18n": "node scripts/sweep-i18n.mjs"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.1",
