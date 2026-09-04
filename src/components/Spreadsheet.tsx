@@ -1,6 +1,6 @@
 import { Plus, Trash2, FileUp } from 'lucide-react';
 import React, { useState } from 'react';
-import { txt, categoryLabel } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 import ImportDialog from './ImportDialog';
 import { Transaction, Account, Budget, INCOME_CATEGORIES, EXPENSE_CATEGORIES, Currency, CURRENCIES } from '../types';
 
@@ -33,6 +33,7 @@ export default function Spreadsheet({
   allTransactions,
   currency
 }: SpreadsheetProps) {
+  const { txt, categoryLabel } = useI18n();
   const symbol = CURRENCIES[currency].symbol;
   const rate = CURRENCIES[currency].rate;
   const [showImport, setShowImport] = useState(false);

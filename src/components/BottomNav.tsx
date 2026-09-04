@@ -1,5 +1,5 @@
 import { LayoutGrid, TrendingDown, TrendingUp, Wallet, LineChart, Home as HomeIcon, PieChart, Settings } from 'lucide-react';
-import { txt } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 import { Sheet } from '../types';
 
 interface BottomNavProps {
@@ -10,6 +10,7 @@ interface BottomNavProps {
 }
 
 export default function BottomNav({ sheets, activeSheetId, onSelectSheet, onShowSettings }: BottomNavProps) {
+  const { txt } = useI18n();
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case 'home': return <HomeIcon className="h-5 w-5" />;

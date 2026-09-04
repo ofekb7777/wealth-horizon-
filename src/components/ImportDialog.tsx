@@ -6,7 +6,7 @@ import {
   ParsedSheet, ColumnMapping, ParseResult,
 } from '../services/bankImport';
 import { Transaction, Account, Currency, CURRENCIES, INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '../types';
-import { txt, plural } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 
 interface ImportDialogProps {
   accounts: Account[];
@@ -30,6 +30,7 @@ const format = (template: string, ...values: (string | number)[]) =>
 export default function ImportDialog({
   accounts, existingTransactions, currency, onImport, onClose,
 }: ImportDialogProps) {
+  const { txt, plural } = useI18n();
   const [sheet, setSheet] = useState<ParsedSheet | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping | null>(null);
   const [accountId, setAccountId] = useState<string>(accounts[0]?.id ?? '');

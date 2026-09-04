@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Transaction, Account, Investment, Sheet, SpreadsheetState, Currency, CURRENCIES, Goal, Budget } from './types.ts';
 import MobileTopBar from './components/MobileTopBar.tsx';
 import BottomNav from './components/BottomNav.tsx';
@@ -15,7 +15,8 @@ import { VersionProvider } from './context/VersionContext.tsx';
 import { repository, initDatabase, wipeEverything } from './data';
 import { fetchPrices } from './services/marketData.ts';
 import { initStatusBar, hideSplashScreen, onAndroidBack } from './native';
-import { txt } from './i18n/he';
+import { useI18n } from './context/LanguageContext';
+import LanguagePicker from './components/LanguagePicker.tsx';
 import { publishSnapshot } from './widget';
 import { AlertTriangle, Loader2, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -23,14 +24,28 @@ import { SpecialBackgroundEffect } from './components/SpecialBackgroundEffect.ts
 import Settings from './components/Settings.tsx';
 
 
-const INITIAL_SHEETS: Sheet[] = [
-  { id: '0', name: txt.screens.home, icon: 'home', type: 'home' },
-  { id: '3', name: txt.screens.accounts, icon: 'wallet', type: 'accounts' },
-  { id: '5', name: txt.screens.analytics, icon: 'dashboard', type: 'dashboard' },
-  { id: '1', name: txt.screens.income, icon: 'trending-up', type: 'income' },
-  { id: '2', name: txt.screens.expenses, icon: 'trending-down', type: 'expenses' },
-  { id: '6', name: txt.screens.budgets, icon: 'pie-chart', type: 'budget' },
-  { id: '4', name: txt.screens.investments, icon: 'investments', type: 'investments' },
+/**
+ * הגדרת המסכים.
+ *
+ * השם לא יושב כאן אלא נגזר מהמילון בזמן רינדור: קבוע ברמת המודול נקבע
+ * פעם אחת בטעינה, ולכן שינוי שפה לא היה מגיע לתפריט הניווט.
+ * `nameKey` הוא הגשר, כי `type` ו-`screens` לא חופפים בשמות
+ * ('dashboard' מול 'analytics', 'budget' מול 'budgets').
+ */
+type SheetDef = Omit<Sheet, 'name'> & { nameKey: keyof typeof INITIAL_SHEET_NAMES };
+
+const INITIAL_SHEET_NAMES = {
+  home: 0, accounts: 0, analytics: 0, income: 0, expenses: 0, budgets: 0, investments: 0,
+};
+
+const SHEET_DEFS: SheetDef[] = [
+  { id: '0', nameKey: 'home', icon: 'home', type: 'home' },
+  { id: '3', nameKey: 'accounts', icon: 'wallet', type: 'accounts' },
+  { id: '5', nameKey: 'analytics', icon: 'dashboard', type: 'dashboard' },
+  { id: '1', nameKey: 'income', icon: 'trending-up', type: 'income' },
+  { id: '2', nameKey: 'expenses', icon: 'trending-down', type: 'expenses' },
+  { id: '6', nameKey: 'budgets', icon: 'pie-chart', type: 'budget' },
+  { id: '4', nameKey: 'investments', icon: 'investments', type: 'investments' },
 ];
 
 const INITIAL_TRANSACTIONS: Transaction[] = [];
@@ -43,6 +58,7 @@ const INITIAL_GOALS: Goal[] = [];
 
 export default function App() {
   const { theme, setTheme, bgEffect, setBgEffect, monoStyle, setMonoStyle } = useTheme();
+  const { txt, needsLanguageChoice } = useI18n();
 
   // מצב פתיחת מסד הנתונים. עד שהוא פתוח אין מה להציג — כל הנתונים בו.
   const [dbReady, setDbReady] = useState(false);
@@ -59,12 +75,15 @@ export default function App() {
     budgets: [],
     activeSheetId: '0',
     notes: '',
-    patchNotes: 'ברוך הבא. כל הנתונים שלך נשמרים על המכשיר הזה בלבד.',
+    patchNotes: '',
   });
   // ... (the entire App contents remain here)
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
-  const sheets: Sheet[] = INITIAL_SHEETS;
+  const sheets: Sheet[] = useMemo(
+    () => SHEET_DEFS.map(({ nameKey, ...rest }) => ({ ...rest, name: txt.screens[nameKey] })),
+    [txt],
+  );
 
   // פותח את מסד הנתונים פעם אחת בעלייה. עד שזה מסתיים מוצג מסך טעינה.
   useEffect(() => {
@@ -545,7 +564,7 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
   }, []);
 
   const navigateToSheet = useCallback((type: string) => {
-    const sheet = INITIAL_SHEETS.find(s => s.type === type);
+    const sheet = SHEET_DEFS.find(s => s.type === type);
     if (sheet) {
       setState(prev => ({ ...prev, activeSheetId: sheet.id }));
       repository.saveUserProfile({ activeSheetId: sheet.id });
@@ -604,6 +623,14 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
     );
   }
 
+  /*
+   * בחירת השפה באה **אחרי** שער פתיחת המסד ולא לפניו: אם המסד לא נפתח,
+   * מסך השגיאה חשוב יותר, ובחירת שפה שלא תישמר לשום מקום רק תבלבל.
+   */
+  if (needsLanguageChoice) {
+    return <LanguagePicker />;
+  }
+
   return (
     <div className={`flex h-[100dvh] w-screen bg-zinc-950 overflow-hidden text-zinc-200 mesh-gradient relative`}>
       <SpecialBackgroundEffect theme={theme} effect={bgEffect} />
@@ -637,11 +664,16 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
           className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden relative md:pb-0 pb-16 hide-scrollbar"
         >
           <div className="flex flex-col min-h-full">
+            {/*
+              * הודעת הפתיחה נגזרת כאן ולא נשמרת ב-state: כך היא מוצגת
+              * בשפה הנוכחית, ולא ננעלת על השפה שהייתה פעילה ברגע שהמסד
+              * נטען לראשונה.
+              */}
             {activeSheet?.type === 'home' && (
               <Home 
                 state={state} 
                 currency={currency} 
-                patchNotes={state.patchNotes}
+                patchNotes={state.patchNotes || txt.welcomeNote}
                 onUpdatePatchNotes={handleUpdatePatchNotes}
                 onImportState={handleImportState}
                 onNavigate={navigateToSheet} 
@@ -781,8 +813,8 @@ const handleUpdateGoal = useCallback((id: string, field: keyof Goal, value: any)
                     onDeleteReminder={handleDeleteReminder}
                     onResetData={async () => {
                       const defaultAccounts: Account[] = [
-                        { id: 'bank-1', name: 'עובר ושב', type: 'Bank', balance: 0 },
-                        { id: 'inv-1', name: 'חשבון השקעות', type: 'Investment', balance: 0 }
+                        { id: 'bank-1', name: txt.accounts.defaultChecking, type: 'Bank', balance: 0 },
+                        { id: 'inv-1', name: txt.accounts.defaultInvestment, type: 'Investment', balance: 0 }
                       ];
                       
                       try {

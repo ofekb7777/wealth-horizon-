@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { txt, categoryLabel } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { SpreadsheetState, Currency, CURRENCIES, Transaction } from '../types';
 import { Wallet, TrendingUp, TrendingDown, Target, Terminal, Settings, Check, X, Zap, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
@@ -29,6 +29,7 @@ export default function Home({
   onAddReminder,
   onDeleteReminder,
 }: HomeProps) {
+  const { txt, categoryLabel, locale } = useI18n();
   const { version } = useVersion();
   const { transactions, accounts, investments, goals } = state;
   const [isEditingPatch, setIsEditingPatch] = useState(false);
@@ -93,7 +94,7 @@ export default function Home({
     // Fill monthly data
     sorted.forEach(t => {
       const d = new Date(t.date);
-      const monthKey = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const monthKey = d.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
       if (!monthlyData[monthKey]) {
         monthlyData[monthKey] = { month: monthKey, income: 0, expenses: 0, unix: d.getTime() };
       }

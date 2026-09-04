@@ -1,5 +1,5 @@
 import { Plus, Trash2, Search, RefreshCcw, ExternalLink, TrendingUp, TrendingDown, Target, Zap, Activity } from 'lucide-react';
-import { txt, trendLabel } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 import { fetchPrices, fetchAnalytics as fetchTickerAnalytics, searchCatalog, searchTickers } from '../services/marketData';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Investment, Currency, CURRENCIES } from '../types';
@@ -24,6 +24,7 @@ export default function Investments({
   onDeleteInvestment,
   currency
 }: InvestmentsProps) {
+  const { txt, trendLabel } = useI18n();
   const { version } = useVersion();
   const [searchQuery, setSearchQuery] = useState('');
   const [tickerResults, setTickerResults] = useState<any[]>([]);
@@ -201,7 +202,7 @@ export default function Investments({
                 }} 
                 className="text-zinc-500 hover:text-white transition-all p-2 group"
               >
-                <div className="font-black text-[10px] uppercase tracking-[0.3em] group-hover:tracking-[0.4em] transition-all">[ Close ]</div>
+                <div className="font-black text-[10px] uppercase tracking-[0.3em] group-hover:tracking-[0.4em] transition-all">[ {txt.common.close} ]</div>
               </button>
             </div>
             
@@ -289,7 +290,7 @@ export default function Investments({
             </div>
 
             <div className="p-6 bg-white/5 border-t border-white/5 flex justify-between items-center shrink-0">
-               <div className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.4em]">Integrated Wealth Core // Data v0{version}</div>
+               <div className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.4em]" dir="ltr">Wealth Horizon &middot; v{version}</div>
                <div className="h-[2px] w-12 bg-teal-500/20"></div>
             </div>
           </div>

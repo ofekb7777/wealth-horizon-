@@ -1,6 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { Account, ACCOUNT_TYPES, Currency, CURRENCIES } from '../types';
-import { txt, accountTypeLabel } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 
 interface AccountsProps {
   accounts: Account[];
@@ -17,6 +17,7 @@ export default function Accounts({
   onDeleteAccount,
   currency
 }: AccountsProps) {
+  const { txt, accountTypeLabel } = useI18n();
   const symbol = CURRENCIES[currency].symbol;
   const rate = CURRENCIES[currency].rate;
 
@@ -34,7 +35,7 @@ export default function Accounts({
         </button>
 
         <div className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] hidden md:block">
-          Financial Institutions
+          {txt.accounts.subtitle}
         </div>
       </div>
 

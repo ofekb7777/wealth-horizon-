@@ -1,14 +1,13 @@
+import { Dictionary } from './types';
+
 /**
- * כל הטקסט שמוצג למשתמש, במקום אחד.
- *
- * למה מרוכז ולא מפוזר בקומפוננטות: כדי שאפשר יהיה לתקן ניסוח בלי
- * לחפש בין 14 קבצים, ולראות את כל הקופי של האפליקציה במבט אחד.
+ * עברית.
  *
  * **הערה על ניסוח:** המקור באנגלית היה מלא ז'רגון מומצא
  * ("Neural Delta", "Autonomous Wealth Engine"). לא תרגמתי אותו מילולית —
  * זו אפליקציה לניהול כסף אישי, והעברית בה פשוטה וברורה.
  */
-export const txt = {
+export const he: Dictionary = {
   // --- כללי ---
   common: {
     add: 'הוסף',
@@ -73,6 +72,9 @@ export const txt = {
   },
 
   // --- טבלת תנועות ---
+  /** נכתב ל-`patchNotes` בהתקנה חדשה — נתון של המשתמש, לכן בשפה שנבחרה. */
+  welcomeNote: 'ברוך הבא. כל הנתונים שלך נשמרים על המכשיר הזה בלבד.',
+
   ledger: {
     incomeTitle: 'הכנסות',
     expensesTitle: 'הוצאות',
@@ -96,6 +98,8 @@ export const txt = {
     classification: 'סוג',
     delete: 'מחק חשבון',
     empty: 'אין עדיין חשבונות. הוסף אחד למעלה.',
+    defaultChecking: 'עובר ושב',
+    defaultInvestment: 'חשבון השקעות',
   },
 
   // --- תקציבים ---
@@ -161,7 +165,6 @@ export const txt = {
     sortValue: 'מיון לפי שווי',
     lastUpdated: 'עודכן',
     offlineNote: 'אין חיבור — מוצג המחיר האחרון שנשמר',
-    searchNeedsNetwork: 'אין תוצאות. חיפוש סימולים דורש חיבור לאינטרנט.',
   },
 
   /**
@@ -205,9 +208,11 @@ export const txt = {
     deleteGoal: 'מחק יעד',
     noGoals: 'לא הוגדרו יעדים',
     insights: 'תובנות AI',
-    insightsNeedKey: 'הזן מפתח Gemini בהגדרות כדי להפעיל תובנות.',
+    insightsNeedKey: 'הזן מפתח AI בהגדרות כדי להפעיל תובנות.',
     insightsLoading: 'מנתח...',
     topCategories: 'הקטגוריות הגדולות',
+    gainers: 'ברווח',
+    laggards: 'בהפסד',
     // קבוצות התובנות שמגיעות מ-Gemini
     groupSafe: 'יציבות',
     groupWealth: 'בניית הון',
@@ -217,12 +222,24 @@ export const txt = {
   // --- הגדרות ---
   settings: {
     title: 'הגדרות',
+    subtitle: 'העדפות ונתונים',
     theme: 'ערכת נושא',
     themeHint: 'בחר מראה',
     ambient: 'אפקט רקע',
+    ambientNone: 'בלי אפקט',
+    ambientNoneHint: 'רקע נקי, והכי חסכוני בסוללה',
+    ambientEyes: 'עיניים',
+    ambientEyesHint: 'עיניים שממצמצות ונעות מאחורי המסך',
+    ambientLeaves: 'עלים נופלים',
+    ambientLeavesHint: 'עלי דובדבן שיורדים למטה',
+    ambientSparks: 'גיצים',
+    ambientSparksHint: 'חלקיקים חמים שעולים לאט',
     currency: 'מטבע תצוגה',
+    language: 'שפה',
+    languageHint: 'משנה את כל מה שמוצג. הנתונים עצמם לא מושפעים.',
     backup: 'גיבוי',
     backupHint: 'הנתונים שלך על המכשיר בלבד. ייצא מדי פעם.',
+    backupValue: 'ייצוא או ייבוא',
     export: 'ייצוא לקובץ',
     import: 'ייבוא מקובץ',
     importSuccess: 'הגיבוי שוחזר בהצלחה.',
@@ -230,11 +247,14 @@ export const txt = {
     importFailed: 'לא הצלחתי לקרוא את הקובץ.',
     reset: 'מחיקת כל הנתונים',
     resetWarning: 'פעולה בלתי הפיכה',
+    resetValue: 'בלתי הפיך',
     resetConfirm: 'למחוק הכל?',
     resetConfirmHint: 'כל התנועות, החשבונות, ההשקעות, היעדים והתקציבים יימחקו. לא ניתן לשחזר.',
     resetDo: 'כן, מחק הכל',
     aiKey: 'מפתח לתובנות AI',
-    aiKeyHint: 'לא חובה. הדבק מפתח Gemini אישי כדי להפעיל תובנות במסך הניתוח. הוא נשמר על המכשיר הזה בלבד ונשלח רק ל-Google. בלי מפתח הפיצ\'ר פשוט כבוי.',
+    aiKeyProvider: 'ספק',
+    aiKeyHintGemini: 'לא חובה. הדבק מפתח Gemini אישי כדי להפעיל תובנות במסך הניתוח. הוא נשמר על המכשיר הזה בלבד ונשלח רק ל-Google. בלי מפתח הפיצ\'ר פשוט כבוי.',
+    aiKeyHintClaude: 'לא חובה. הדבק מפתח Anthropic אישי כדי להפעיל תובנות במסך הניתוח. הוא נשמר על המכשיר הזה בלבד ונשלח רק ל-Anthropic. בלי מפתח הפיצ\'ר פשוט כבוי.',
     storage: 'מיקום האחסון',
     storageValue: 'SQLite מקומי על המכשיר',
   },
@@ -280,66 +300,67 @@ export const txt = {
     subjectPlaceholder: 'על מה להזכיר...',
     dayOfMonth: 'ביום בחודש',
     monthly: 'חודשי',
+    next: 'הבא',
     empty: 'לא הוגדרו תזכורות',
     delete: 'מחק תזכורת',
     note: 'התזכורות מוצגות כאן באפליקציה. התראות במכשיר יתווספו בהמשך.',
+    defaultSubject: 'להזין נתוני משכורת',
+    defaultBody: 'הגיע הזמן להזין את נתוני המשכורת החודש.',
   },
-} as const;
+  /**
+   * שמות תצוגה לקטגוריות ולסוגי חשבונות.
+   *
+   * **הערכים עצמם נשמרים במסד באנגלית ולא משתנים.** התרגום הוא בתצוגה
+   * בלבד — אחרת כל הנתונים הקיימים היו נשברים, וקבצי גיבוי ישנים לא
+   * היו נקראים.
+   */
+  categories: {
+    // הכנסות
+    'Salary': 'משכורת',
+    'Dividends': 'דיבידנדים',
+    'Yield': 'תשואה',
+    'Interests': 'ריבית',
+    'Business': 'עסק',
+    'Asset Sale': 'מכירת נכס',
+    'Other Income': 'הכנסה אחרת',
+    // הוצאות
+    'Housing': 'דיור',
+    'Transport': 'תחבורה',
+    'Food': 'אוכל',
+    'Subscriptions': 'מנויים',
+    'Entertainment': 'בילויים',
+    'Health': 'בריאות',
+    'Shopping': 'קניות',
+    'Investment Purchase': 'רכישת השקעה',
+    'Taxes': 'מיסים',
+    'Other Expense': 'הוצאה אחרת',
+    // יעדים
+    'Savings': 'חיסכון',
+  } as Record<string, string>,
 
-/**
- * שמות תצוגה לקטגוריות.
- *
- * **הערכים עצמם נשמרים במסד באנגלית ולא משתנים.** התרגום הוא בתצוגה
- * בלבד — אחרת כל הנתונים הקיימים היו נשברים, וקבצי גיבוי ישנים לא
- * היו נקראים.
- */
-const CATEGORY_LABELS: Record<string, string> = {
-  // הכנסות
-  'Salary': 'משכורת',
-  'Dividends': 'דיבידנדים',
-  'Yield': 'תשואה',
-  'Interests': 'ריבית',
-  'Business': 'עסק',
-  'Asset Sale': 'מכירת נכס',
-  'Other Income': 'הכנסה אחרת',
-  // הוצאות
-  'Housing': 'דיור',
-  'Transport': 'תחבורה',
-  'Food': 'אוכל',
-  'Subscriptions': 'מנויים',
-  'Entertainment': 'בילויים',
-  'Health': 'בריאות',
-  'Shopping': 'קניות',
-  'Investment Purchase': 'רכישת השקעה',
-  'Taxes': 'מיסים',
-  'Other Expense': 'הוצאה אחרת',
-  // יעדים
-  'Savings': 'חיסכון',
+  /** שמות ערכות הנושא. `monoInverted` הוא לבן-על-שחור. */
+  themes: {
+    default: 'ורוד',
+    mono: 'שחור ולבן',
+    monoInverted: 'לבן ושחור',
+    crimson: 'ארגמן',
+    gold: 'ענבר',
+    forest: 'ירוק יער',
+    royal: 'כחול מלכותי',
+    lavender: 'סגול',
+  } as Record<string, string>,
+
+  accountTypes: {
+    'Bank': 'עו"ש',
+    'Investment': 'השקעות',
+    'Pension': 'פנסיה',
+    'Cash': 'מזומן',
+  } as Record<string, string>,
+
+  // --- מסך בחירת השפה בהרצה הראשונה ---
+  languagePicker: {
+    title: 'בחר שפה',
+    subtitle: 'אפשר לשנות בכל רגע בהגדרות.',
+    confirm: 'המשך',
+  },
 };
-
-const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  'Bank': 'עו"ש',
-  'Investment': 'השקעות',
-  'Pension': 'פנסיה',
-  'Cash': 'מזומן',
-};
-
-/** שם תצוגה לקטגוריה. קטגוריה שהמשתמש הגדיר בעצמו מוצגת כמו שהיא. */
-export const categoryLabel = (category: string): string =>
-  CATEGORY_LABELS[category] ?? category;
-
-export const accountTypeLabel = (type: string): string =>
-  ACCOUNT_TYPE_LABELS[type] ?? type;
-
-/** שם תצוגה לדירוג המגמה. */
-export const trendLabel = (rating: string): string =>
-  txt.trend[rating] ?? rating;
-
-/**
- * בחירה בין צורת יחיד לרבים.
- *
- * בעברית "1 שורות דולגו" שגוי — מספר אחד דורש צורת יחיד. פונקציה קטנה
- * במקום לפזר תנאים בקומפוננטות.
- */
-export const plural = (count: number, one: string, many: string): string =>
-  count === 1 ? one : many.replace(/%1\$s/g, String(count));

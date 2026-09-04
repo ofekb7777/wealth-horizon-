@@ -1,5 +1,5 @@
 import React from 'react';
-import { txt } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 import { Sheet } from '../types';
 import { LayoutGrid, TrendingDown, TrendingUp, Wallet, LineChart, Home as HomeIcon, PieChart, Settings } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -14,6 +14,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ sheets, activeSheetId, onSelectSheet, onShowSettings }: SidebarProps) {
+  const { txt } = useI18n();
   const { theme, setTheme } = useTheme();
 
   const getIcon = (iconName: string) => {
@@ -88,7 +89,7 @@ export default function Sidebar({ sheets, activeSheetId, onSelectSheet, onShowSe
           className="w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-zinc-100 hover:bg-white/5 rounded-xl transition-all text-xs font-black uppercase tracking-widest"
         >
           <Settings className="h-4 w-4" />
-          Settings
+          {txt.screens.settings}
         </button>
 
       </div>

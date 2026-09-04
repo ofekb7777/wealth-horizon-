@@ -39,9 +39,20 @@
 @import '@fontsource/heebo/hebrew-900.css';
 @import "tailwindcss";
 
+/*
+ * ערבית, סינית והינדי — **בכוונה בלי פונט ארוז.**
+ *
+ * `@fontsource/noto-sans-sc` לבדו מוסיף מיליוני בתים ל-APK, ואנדרואיד
+ * ממילא מגיע עם Noto Naskh Arabic, Noto CJK ו-Noto Devanagari מותקנים
+ * במערכת. `system-ui` בסוף השרשרת תופס אותם. הכלל מ-CLAUDE.md §6
+ * מלכודת #4 נשמר: הבילד לא מבצע אף בקשת רשת חיצונית.
+ *
+ * עברית היא היוצאת מן הכלל, כי היא שפת הפיתוח של האפליקציה ורצינו
+ * שהיא תיראה זהה בכל מכשיר.
+ */
 @theme {
-  --font-sans: "Inter", "Heebo", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Outfit", "Heebo", sans-serif;
+  --font-sans: "Inter", "Heebo", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-display: "Outfit", "Heebo", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Heebo", ui-monospace, SFMono-Regular, monospace;
 }
 

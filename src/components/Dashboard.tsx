@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { txt, categoryLabel } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 import {
   BarChart,
   Bar,
@@ -20,7 +20,7 @@ import {
 import { SpreadsheetState, Goal, Currency, CURRENCIES } from '../types';
 import { Plus, Trash2, Cpu, Goal as GoalIcon, BarChart3, Lightbulb, Loader2, TrendingUp, TrendingDown, Activity, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getFinancialInsights } from '../services/geminiService';
+import { getFinancialInsights } from '../services/aiService';
 
 interface DashboardProps {
   state: SpreadsheetState;
@@ -43,6 +43,7 @@ const COLORS = [
 ];
 
 export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal, onNavigate, currency }: DashboardProps) {
+  const { txt, categoryLabel } = useI18n();
   const { transactions, accounts, investments, goals } = state;
   const [activeTab, setActiveTab] = useState<'overview' | 'goals' | 'advisor'>('overview');
   const [timeframe, setTimeframe] = useState<'1m' | '3m' | '6m' | '1y' | 'all'>('all');
@@ -520,8 +521,8 @@ export default function Dashboard({ state, onUpdateGoal, onAddGoal, onDeleteGoal
                       )}
                     </div>
                     <div className="flex gap-4">
-                       <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-widest"><TrendingUp className="h-3.5 w-3.5" /> Profitable</div>
-                       <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-rose-400 uppercase tracking-widest"><TrendingDown className="h-3.5 w-3.5" /> Under-par</div>
+                       <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-widest"><TrendingUp className="h-3.5 w-3.5" /> {txt.analytics.gainers}</div>
+                       <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-rose-400 uppercase tracking-widest"><TrendingDown className="h-3.5 w-3.5" /> {txt.analytics.laggards}</div>
                     </div>
                   </div>
                   <div className="flex-1 min-h-[200px]">

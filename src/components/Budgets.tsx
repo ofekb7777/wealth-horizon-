@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { txt, categoryLabel } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 import { Budget, SpreadsheetState, Currency, CURRENCIES, EXPENSE_CATEGORIES } from '../types';
 import { Plus, Trash2, ChevronLeft, ChevronRight, AlertCircle, PieChart, TrendingDown, Check, LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -29,6 +29,7 @@ export default function Budgets({
   onDeleteBudget,
   currency
 }: BudgetsProps) {
+  const { txt, categoryLabel, locale } = useI18n();
   const { transactions, budgets } = state;
   const symbol = CURRENCIES[currency].symbol;
   const rate = CURRENCIES[currency].rate;
@@ -71,12 +72,15 @@ export default function Budgets({
     setSelectedMonth(`${nextYear}-${String(nextMonth).padStart(2, '0')}`);
   };
 
-  // Format month name for display (e.g., "May 2026")
+  /*
+   * שם החודש היה נעוץ ב-'he-IL', ולכן הופיע בעברית גם כשהאפליקציה
+   * בסינית. הוא הולך עכשיו לפי השפה הפעילה.
+   */
   const formattedMonthName = useMemo(() => {
     const [year, col] = selectedMonth.split('-').map(Number);
     const date = new Date(year, col - 1, 1);
-    return date.toLocaleString('he-IL', { month: 'long', year: 'numeric' });
-  }, [selectedMonth]);
+    return date.toLocaleString(locale, { month: 'long', year: 'numeric' });
+  }, [selectedMonth, locale]);
 
   // Retrieve unbudgeted expense categories
   const availablePresetCategories = useMemo(() => {

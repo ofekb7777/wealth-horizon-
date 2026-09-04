@@ -1,17 +1,33 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
+import { LanguageProvider, migrateExistingInstallToHebrew, readStoredLocale } from './context/LanguageContext.tsx';
 import { ThemeProvider } from './context/ThemeContext.tsx';
 import { VersionProvider } from './context/VersionContext.tsx';
+import { DEFAULT_LOCALE, getDirection } from './i18n';
 import './index.css';
+
+/*
+ * שפה וכיוון נקבעים **לפני** הרינדור הראשון.
+ *
+ * `index.html` נשלח עם אנגלית ו-LTR, כי זו ברירת המחדל. אם המשתמש בחר
+ * ערבית או עברית, מציבים את הכיוון כאן — אחרת הפריים הראשון היה נצבע
+ * בכיוון ההפוך ואז מתהפך מול העיניים.
+ */
+migrateExistingInstallToHebrew();
+const startupLocale = readStoredLocale() ?? DEFAULT_LOCALE;
+document.documentElement.lang = startupLocale;
+document.documentElement.dir = getDirection(startupLocale);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider>
-      <VersionProvider>
-        <App />
-      </VersionProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <VersionProvider>
+          <App />
+        </VersionProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   </StrictMode>,
 );
 

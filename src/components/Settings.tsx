@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { txt } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 import { Theme, BgEffect, MonoStyle } from '../context/ThemeContext';
 import { Currency, CURRENCIES, SpreadsheetState } from '../types';
 import { 
@@ -21,7 +21,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import RemindersWidget from './RemindersWidget';
-import { getApiKey, setApiKey } from '../services/geminiService';
+import { AiProvider, getApiKey, getProvider, setApiKey, setProvider } from '../services/aiService';
+import { LOCALES } from '../i18n';
 
 interface SettingsProps {
   theme: Theme;
@@ -54,10 +55,20 @@ export default function Settings({
   onAddReminder,
   onDeleteReminder
 }: SettingsProps) {
+  const { txt, locale, setLocale } = useI18n();
   const [activeDropdown, setActiveDropdown] = useState<'theme' | 'effect' | 'currency' | 'backup' | 'reset' | null>(null);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
-  const [geminiKey, setGeminiKey] = useState(() => getApiKey());
+  const [aiProvider, setAiProviderState] = useState<AiProvider>(() => getProvider());
+  const [apiKeyDraft, setApiKeyDraft] = useState(() => getApiKey());
   const [keySaved, setKeySaved] = useState(false);
+
+  // החלפת ספק טוענת את המפתח **שלו**, לא משאירה את זה של הקודם בשדה.
+  const switchProvider = (next: AiProvider) => {
+    setProvider(next);
+    setAiProviderState(next);
+    setApiKeyDraft(getApiKey(next));
+    setKeySaved(false);
+  };
   const [copiedUid, setCopiedUid] = useState(false);
 
   const toggleDropdown = (type: 'theme' | 'effect' | 'currency' | 'backup' | 'reset') => {
@@ -99,20 +110,23 @@ export default function Settings({
   };
 
   const themesList: { id: Theme; label: string; color: string }[] = [
-    { id: 'default', label: 'Horizon Pink', color: '#ec4899' },
-    { id: 'mono', label: 'Black & White', color: '#000000' },
-    { id: 'crimson', label: 'Crimson Cyber', color: '#f43f5e' },
-    { id: 'gold', label: 'Gilded Amber', color: '#fbbf24' },
-    { id: 'forest', label: 'Forest Jade', color: '#059669' },
-    { id: 'royal', label: 'Royal Sapphire', color: '#3b82f6' },
-    { id: 'lavender', label: 'Nebula Violet', color: '#8b5cf6' }
+    { id: 'default', label: txt.themes.default, color: '#ec4899' },
+    { id: 'mono', label: txt.themes.mono, color: '#000000' },
+    { id: 'crimson', label: txt.themes.crimson, color: '#f43f5e' },
+    { id: 'gold', label: txt.themes.gold, color: '#fbbf24' },
+    { id: 'forest', label: txt.themes.forest, color: '#059669' },
+    { id: 'royal', label: txt.themes.royal, color: '#3b82f6' },
+    { id: 'lavender', label: txt.themes.lavender, color: '#8b5cf6' },
   ];
 
+  /** שחור-על-לבן ולבן-על-שחור הן אותה ערכה בשני מצבים. */
+  const monoLabel = () => (monoStyle === 'light' ? txt.themes.mono : txt.themes.monoInverted);
+
   const ambientEffects: { id: BgEffect; label: string; icon: string; desc: string }[] = [
-    { id: 'none', label: 'No Effects', icon: '✕', desc: 'Static backing for optimal energy efficiency' },
-    { id: 'cateyes', label: 'Colossal Eyes', icon: '👁️', desc: 'Blinking predatory eyes pacing in the backing' },
-    { id: 'leaves', label: 'Sakura Cascade', icon: '🌸', desc: 'Falling cherry blossoms floating vertically' },
-    { id: 'sparks', label: 'Glow Embers', icon: '✨', desc: 'Microscopic thermal particle storm rise' }
+    { id: 'none', label: txt.settings.ambientNone, icon: '✕', desc: txt.settings.ambientNoneHint },
+    { id: 'cateyes', label: txt.settings.ambientEyes, icon: '👁️', desc: txt.settings.ambientEyesHint },
+    { id: 'leaves', label: txt.settings.ambientLeaves, icon: '🌸', desc: txt.settings.ambientLeavesHint },
+    { id: 'sparks', label: txt.settings.ambientSparks, icon: '✨', desc: txt.settings.ambientSparksHint },
   ];
 
   const currentThemeObj = themesList.find(t => t.id === theme) || themesList[0];
@@ -136,7 +150,7 @@ export default function Settings({
           <h1 className="text-3xl font-black text-zinc-100 uppercase tracking-tighter italic">{txt.settings.title}</h1>
         </div>
         <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest ms-12">
-          Configure Preferences & Control Dashboard Nodes
+          {txt.settings.subtitle}
         </p>
       </div>
 
@@ -160,7 +174,7 @@ export default function Settings({
             <div className="flex flex-col gap-1 items-center">
               <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.theme}</p>
               <p className="text-base font-black tracking-tighter text-zinc-100 flex items-center gap-1.5 justify-center">
-                {theme === 'mono' ? (monoStyle === 'light' ? 'Black & White' : 'White & Black') : currentThemeObj.label}
+                {theme === 'mono' ? monoLabel() : currentThemeObj.label}
                 <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform ${activeDropdown === 'theme' ? 'rotate-180' : ''}`} />
               </p>
             </div>
@@ -202,7 +216,7 @@ export default function Settings({
                     >
                       <div className="flex flex-col min-w-0">
                         <span className={`font-bold truncate text-[10px] uppercase tracking-wider ${theme === t.id && t.id === 'mono' ? 'text-zinc-100' : ''}`}>
-                          {t.id === 'mono' ? (monoStyle === 'light' ? 'Black & White' : 'White & Black') : t.label}
+                          {t.id === 'mono' ? monoLabel() : t.label}
                         </span>
                       </div>
                       <div className="h-2.5 w-2.5 rounded-full border border-black" style={{ backgroundColor: t.id === 'mono' ? (monoStyle === 'light' ? '#ffffff' : '#000000') : t.color }} />
@@ -349,7 +363,7 @@ export default function Settings({
             <div className="flex flex-col gap-1 items-center">
               <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.backup}</p>
               <p className="text-base font-black tracking-tighter text-zinc-100 flex items-center gap-1.5 justify-center">
-                Backup State
+                {txt.settings.backupValue}
                 <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform ${activeDropdown === 'backup' ? 'rotate-180' : ''}`} />
               </p>
             </div>
@@ -403,7 +417,7 @@ export default function Settings({
             <div className="flex flex-col gap-1 items-center">
               <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.reset}</p>
               <p className="text-base font-black tracking-tighter text-zinc-100 flex items-center gap-1.5 justify-center">
-                Wipe Ledger
+                {txt.settings.resetValue}
                 <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform ${activeDropdown === 'reset' ? 'rotate-180' : ''}`} />
               </p>
             </div>
@@ -420,7 +434,7 @@ export default function Settings({
                 <div className="space-y-1">
                   <h4 className="text-[8px] font-black text-rose-400 uppercase tracking-widest">{txt.settings.resetWarning}</h4>
                   <p className="text-[8px] text-zinc-500 font-medium leading-relaxed uppercase">
-                    Wipes transactions, budgets, ledger lines and sets accounts to starter templates.
+                    {txt.settings.resetConfirmHint}
                   </p>
                 </div>
 
@@ -429,17 +443,17 @@ export default function Settings({
                     onClick={() => setShowConfirmReset(true)}
                     className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-400 text-[8px] font-black uppercase tracking-widest transition-all"
                   >
-                    <Trash2 className="h-3 w-3" /> Execute Terminal Purge
+                    <Trash2 className="h-3 w-3" /> {txt.settings.reset}
                   </button>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-[8px] text-rose-300 font-black uppercase tracking-widest animate-pulse">Are you absolutely certain? This operation is persistent!</p>
+                    <p className="text-[8px] text-rose-300 font-black uppercase tracking-widest animate-pulse">{txt.settings.resetConfirm}</p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setShowConfirmReset(false)}
                         className="flex-1 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[8px] font-black uppercase tracking-widest transition-all"
                       >
-                        Abort
+                        {txt.common.cancel}
                       </button>
                       <button
                         onClick={() => {
@@ -449,7 +463,7 @@ export default function Settings({
                         }}
                         className="flex-1 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[8px] font-black uppercase tracking-widest transition-all"
                       >
-                        Confirm Purge
+                        {txt.settings.resetDo}
                       </button>
                     </div>
                   </div>
@@ -483,21 +497,71 @@ export default function Settings({
 
       <div className="mt-8 glass-card rounded-2xl border border-zinc-500/20 p-5 space-y-3 bg-zinc-900/40">
         <div>
+          <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.language}</h3>
+          <p className="text-[10px] text-zinc-500 mt-1 leading-relaxed">{txt.settings.languageHint}</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {LOCALES.map(item => (
+            <button
+              key={item.code}
+              lang={item.code}
+              dir={item.dir}
+              onClick={() => setLocale(item.code)}
+              aria-pressed={locale === item.code}
+              className={`px-3 py-2 rounded-xl border text-xs font-black transition-all active:scale-95 ${
+                locale === item.code
+                  ? 'border-pink-500/50 bg-pink-500/10 text-zinc-100'
+                  : 'border-white/10 bg-white/[0.02] text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {item.nativeName}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-8 glass-card rounded-2xl border border-zinc-500/20 p-5 space-y-3 bg-zinc-900/40">
+        <div>
           <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.aiKey}</h3>
           <p className="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-            {txt.settings.aiKeyHint}
+            {aiProvider === 'claude' ? txt.settings.aiKeyHintClaude : txt.settings.aiKeyHintGemini}
           </p>
         </div>
+
+        <div>
+          <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">{txt.settings.aiKeyProvider}</p>
+          <div className="flex gap-2">
+            {([
+              { id: 'gemini' as const, label: 'Google Gemini' },
+              { id: 'claude' as const, label: 'Anthropic Claude' },
+            ]).map(option => (
+              <button
+                key={option.id}
+                onClick={() => switchProvider(option.id)}
+                aria-pressed={aiProvider === option.id}
+                className={`flex-1 px-3 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${
+                  aiProvider === option.id
+                    ? 'border-pink-500/50 bg-pink-500/10 text-zinc-100'
+                    : 'border-white/10 bg-white/[0.02] text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex items-center gap-2">
           <input
             type="password"
-            value={geminiKey}
-            onChange={(e) => { setGeminiKey(e.target.value); setKeySaved(false); }}
-            placeholder="AIza..."
+            value={apiKeyDraft}
+            onChange={(e) => { setApiKeyDraft(e.target.value); setKeySaved(false); }}
+            placeholder={aiProvider === 'claude' ? 'sk-ant-...' : 'AIza...'}
+            dir="ltr"
             className="flex-1 bg-zinc-950/50 border border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/30 transition-all"
           />
           <button
-            onClick={() => { setApiKey(geminiKey); setKeySaved(true); }}
+            onClick={() => { setApiKey(aiProvider, apiKeyDraft); setKeySaved(true); }}
             className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-zinc-300 hover:bg-white/10 transition-all active:scale-95"
           >
             {keySaved ? txt.common.saved : txt.common.save}
@@ -518,7 +582,7 @@ export default function Settings({
       {/* Elegant minimalist footer matching overall terminal dashboard */}
       <div className="flex items-center justify-center gap-2 pt-4">
         <span className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-700">
-          Terminal Console System Engine • Active & Encryption Secured
+          {txt.settings.storage} &middot; {txt.settings.storageValue}
         </span>
       </div>
     </div>

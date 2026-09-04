@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { txt } from '../i18n/he';
+import { useI18n } from '../context/LanguageContext';
 import { Reminder } from '../types';
 import { Calendar, Clock, Plus, Trash2, Mail, RefreshCw, Banknote } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -11,14 +11,15 @@ interface RemindersWidgetProps {
 }
 
 export default function RemindersWidget({ reminders, onAddReminder, onDeleteReminder }: RemindersWidgetProps) {
+  const { txt, locale } = useI18n();
   const [dayOfMonth, setDayOfMonth] = useState<number>(1);
   const [isAdding, setIsAdding] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (dayOfMonth) {
-       const subject = "להזין נתוני משכורת";
-       const body = "הגיע הזמן להזין את נתוני המשכורת החודש.";
+       const subject = txt.reminders.defaultSubject;
+       const body = txt.reminders.defaultBody;
        const time = "09:00";
        
        const currentDate = new Date();
@@ -101,13 +102,13 @@ export default function RemindersWidget({ reminders, onAddReminder, onDeleteRemi
                 onClick={() => setIsAdding(false)}
                 className="flex-1 py-2 rounded-xl font-bold uppercase tracking-widest text-[10px] text-zinc-400 border border-white/10 hover:bg-white/5"
               >
-                Cancel
+                {txt.common.cancel}
               </button>
               <button 
                 type="submit"
                 className="flex-1 py-2 rounded-xl font-bold uppercase tracking-widest text-[10px] text-pink-50 bg-pink-600 hover:bg-pink-500"
               >
-                Schedule
+                {txt.common.add}
               </button>
             </div>
           </motion.form>
@@ -138,21 +139,21 @@ export default function RemindersWidget({ reminders, onAddReminder, onDeleteRemi
               {reminder.recurrence === 'monthly' ? (
                  <div className="flex items-center gap-1.5 text-pink-400/80">
                    <RefreshCw className="h-3 w-3" />
-                   Monthly (Day {reminder.dayOfMonth})
+                   {txt.reminders.monthly} &middot; {txt.reminders.dayOfMonth} {reminder.dayOfMonth}
                  </div>
               ) : (
                  <div className="flex items-center gap-1.5">
                    <Calendar className="h-3 w-3" />
-                   {new Date(reminder.scheduledTime).toLocaleDateString()}
+                   {new Date(reminder.scheduledTime).toLocaleDateString(locale)}
                  </div>
               )}
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3 w-3" />
-                {new Date(reminder.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {new Date(reminder.scheduledTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
             {reminder.recurrence === 'monthly' && (
-              <p className="text-[9px] text-zinc-600 mt-1 uppercase font-bold">Next: {new Date(reminder.scheduledTime).toLocaleDateString()}</p>
+              <p className="text-[9px] text-zinc-600 mt-1 uppercase font-bold">{txt.reminders.next}: {new Date(reminder.scheduledTime).toLocaleDateString(locale)}</p>
             )}
           </div>
         ))}
