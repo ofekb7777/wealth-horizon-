@@ -296,6 +296,8 @@ npm run test:search       # 22 בדיקות לחיפוש סימולים — כו
 npm run test:i18n         # 9 בדיקות לשלמות המילונים
 npm run test:broker       # 25 בדיקות לפענוח דוח ה-Flex של IBKR
 npm run sweep:i18n        # מרנדר בעברית בדפדפן ומחפש אנגלית שנשארה
+npm run build:demo        # קובץ HTML יחיד שאפשר לפתוח מכל מכשיר
+npm run build:artifact    # אותו קובץ בלי מעטפת מסמך, לפרסום ככתובת
 npm run verify:android    # תקינות XML + הפניות למשאבים (לא בנייה)
 npm run check:java        # מקמפל את קוד הווידג'ט מול פלטפורמת אנדרואיד
 ```

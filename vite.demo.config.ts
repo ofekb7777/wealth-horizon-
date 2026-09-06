@@ -57,8 +57,34 @@ function inlineSqliteWasm(): Plugin {
   };
 }
 
+/**
+ * מחליף את התו U+FFFD בבאנדל ברצף הבריחה `\uFFFD`.
+ *
+ * `fast-xml-parser` מכיל את הטווח החוקי של שמות XML, שנגמר בדיוק בתו
+ * הזה, והוא נכתב לקובץ כתו גולמי. תו כזה בתוך HTML שביר: כל כלי
+ * שמקודד מחדש את הקובץ, או שירות שמאמת אותו, לא יכול להבדיל בינו
+ * לבין שגיאת פענוח — ואכן שירות פרסום דחה את הקובץ בגללו.
+ *
+ * ההחלפה מתרחשת בתוך מחרוזת JavaScript, ולכן `\uFFFD` נותן בדיוק
+ * את אותו תו בזמן ריצה. הביטוי הרגולרי לא משתנה.
+ */
+function escapeReplacementChar(): Plugin {
+  return {
+    name: 'escape-replacement-char',
+    writeBundle(options, bundle) {
+      for (const [fileName, chunk] of Object.entries(bundle)) {
+        if (!fileName.endsWith('.html') || chunk.type !== 'asset') continue;
+        const html = String(chunk.source);
+        if (!html.includes('\uFFFD')) continue;
+        const target = path.resolve(options.dir || 'dist-demo', fileName);
+        fs.writeFileSync(target, html.split('\uFFFD').join('\\uFFFD'), 'utf-8');
+      }
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), inlineSqliteWasm(), viteSingleFile()],
+  plugins: [react(), tailwindcss(), inlineSqliteWasm(), viteSingleFile(), escapeReplacementChar()],
   resolve: { alias: { '@': path.resolve(__dirname, '.') } },
   build: {
     outDir: 'dist-demo',
