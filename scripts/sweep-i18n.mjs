@@ -25,6 +25,7 @@ const ALLOWED = new Set([
   'spy', 'qqq', 'aapl', 'nvda', 'tsla', 'btc', 'usd', 'eur', 'gbp', 'ils',
   'nasdaq', 'nyse', 'etf', 'crypto', 'tase', 'ai', 'id', 'data', 'v',
   'google', 'gemini', 'anthropic', 'claude', 'sk', 'ant', 'aiza',
+  'yahoo', 'finnhub',
   'english', 'chinese', 'hindi', 'spanish', 'arabic', 'hebrew', 'espanol',
 ]);
 

@@ -21,7 +21,60 @@ import { tickerCatalog } from '../data/tickers';
  */
 
 const YAHOO = 'https://query1.finance.yahoo.com';
+const FINNHUB = 'https://finnhub.io/api/v1';
 const CACHE_KEY = 'market_price_cache';
+const PROVIDER_KEY = 'price_provider';
+const FINNHUB_KEY = 'finnhub_api_key';
+
+/**
+ * מאיפה נמשכים המחירים.
+ *
+ * Yahoo הוא ברירת המחדל ולא דורש כלום, אבל נקודת הקצה שלו **לא רשמית**:
+ * אין מאחוריה שום התחייבות, והיא חוסמת בקצב בלי הודעה. זה המקור לכך
+ * שמחירים "לפעמים לא מתעדכנים".
+ *
+ * Finnhub נותן מפתח אישי חינם עם 60 קריאות בדקה — אותו מודל בדיוק של
+ * מפתח ה-AI ושל טוקן הברוקר, ונשמר על המכשיר בלבד.
+ *
+ * ⚠️ **החינם של Finnhub מכסה מניות אמריקאיות בלבד.** סימול שהוא לא
+ * מכיר — בעיקר `.TA` של תל אביב — נופל אחורה ל-Yahoo לאותו סימול.
+ * בלי הנפילה הזאת חצי מהתיק היה קופא ברגע שמזינים מפתח.
+ */
+export type PriceProvider = 'yahoo' | 'finnhub';
+
+export function getPriceProvider(): PriceProvider {
+  try {
+    return localStorage.getItem(PROVIDER_KEY) === 'finnhub' ? 'finnhub' : 'yahoo';
+  } catch {
+    return 'yahoo';
+  }
+}
+
+export function setPriceProvider(provider: PriceProvider): void {
+  try {
+    localStorage.setItem(PROVIDER_KEY, provider);
+  } catch (e) {
+    console.error('Could not save the price provider', e);
+  }
+}
+
+export function getFinnhubKey(): string {
+  try {
+    return localStorage.getItem(FINNHUB_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function setFinnhubKey(key: string): void {
+  try {
+    const trimmed = key.trim();
+    if (trimmed) localStorage.setItem(FINNHUB_KEY, trimmed);
+    else localStorage.removeItem(FINNHUB_KEY);
+  } catch (e) {
+    console.error('Could not save the Finnhub key', e);
+  }
+}
 
 interface CachedPrice {
   price: number;
@@ -101,6 +154,20 @@ function historyFromChart(json: any): { date: Date; price: number }[] {
  * מחירים נוכחיים. מחזיר תמיד ערך לכל טיקר שיש לו מחיר מוטמן,
  * גם כשאין רשת בכלל.
  */
+/** מחיר בודד מ-Finnhub. `c` הוא המחיר הנוכחי; 0 = סימול שלא מוכר לו. */
+async function finnhubPrice(ticker: string, apiKey: string): Promise<number | null> {
+  const json = await getJson(`${FINNHUB}/quote`, { symbol: ticker, token: apiKey });
+  const price = json?.c;
+  return typeof price === 'number' && price > 0 ? price : null;
+}
+
+async function yahooPrice(ticker: string): Promise<number | null> {
+  const json = await getJson(`${YAHOO}/v8/finance/chart/${encodeURIComponent(ticker)}`, {
+    interval: '1d', range: '1d',
+  });
+  return json ? priceFromChart(json) : null;
+}
+
 export async function fetchPrices(tickers: string[]): Promise<Record<string, number>> {
   const unique = [...new Set(tickers.filter(Boolean))];
   const cache = readCache();
@@ -111,12 +178,12 @@ export async function fetchPrices(tickers: string[]): Promise<Record<string, num
     if (cache[ticker]) out[ticker] = cache[ticker].price;
   }
 
+  const apiKey = getPriceProvider() === 'finnhub' ? getFinnhubKey() : '';
   const now = new Date().toISOString();
+
   await Promise.all(unique.map(async (ticker) => {
-    const json = await getJson(`${YAHOO}/v8/finance/chart/${encodeURIComponent(ticker)}`, {
-      interval: '1d', range: '1d',
-    });
-    const price = json && priceFromChart(json);
+    // Finnhub קודם כשיש מפתח, ו-Yahoo תופס כל סימול שהוא לא מכיר.
+    const price = (apiKey && await finnhubPrice(ticker, apiKey)) || await yahooPrice(ticker);
     if (price) {
       out[ticker] = price;
       cache[ticker] = { price, at: now };

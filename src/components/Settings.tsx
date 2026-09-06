@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import RemindersWidget from './RemindersWidget';
 import { AiProvider, getApiKey, getProvider, setApiKey, setProvider } from '../services/aiService';
 import { getBrokerCredentials, setBrokerCredentials } from '../services/broker';
+import { PriceProvider, getFinnhubKey, getPriceProvider, setFinnhubKey, setPriceProvider } from '../services/marketData';
 import { LOCALES } from '../i18n';
 
 interface SettingsProps {
@@ -62,6 +63,10 @@ export default function Settings({
   const [aiProvider, setAiProviderState] = useState<AiProvider>(() => getProvider());
   const [apiKeyDraft, setApiKeyDraft] = useState(() => getApiKey());
   const [keySaved, setKeySaved] = useState(false);
+
+  const [priceProvider, setPriceProviderState] = useState<PriceProvider>(() => getPriceProvider());
+  const [finnhubKey, setFinnhubKeyDraft] = useState(() => getFinnhubKey());
+  const [finnhubSaved, setFinnhubSaved] = useState(false);
 
   const [brokerToken, setBrokerToken] = useState(() => getBrokerCredentials().token);
   const [brokerQueryId, setBrokerQueryId] = useState(() => getBrokerCredentials().queryId);
@@ -572,6 +577,56 @@ export default function Settings({
             {keySaved ? txt.common.saved : txt.common.save}
           </button>
         </div>
+      </div>
+
+      <div className="mt-8 glass-card rounded-2xl border border-zinc-500/20 p-5 space-y-3 bg-zinc-900/40">
+        <div>
+          <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{txt.settings.priceSource}</h3>
+          <p className="text-[10px] text-zinc-500 mt-1 leading-relaxed">{txt.settings.priceSourceHint}</p>
+        </div>
+
+        <div className="flex gap-2">
+          {([
+            { id: 'yahoo' as const, label: txt.settings.priceSourceYahoo },
+            { id: 'finnhub' as const, label: txt.settings.priceSourceFinnhub },
+          ]).map(option => (
+            <button
+              key={option.id}
+              onClick={() => { setPriceProvider(option.id); setPriceProviderState(option.id); }}
+              aria-pressed={priceProvider === option.id}
+              className={`flex-1 px-3 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${
+                priceProvider === option.id
+                  ? 'border-pink-500/50 bg-pink-500/10 text-zinc-100'
+                  : 'border-white/10 bg-white/[0.02] text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        {priceProvider === 'finnhub' && (
+          <>
+            <p className="text-[10px] text-zinc-500 leading-relaxed">{txt.settings.finnhubKeyHint}</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                value={finnhubKey}
+                onChange={(e) => { setFinnhubKeyDraft(e.target.value); setFinnhubSaved(false); }}
+                placeholder="cXXXXXXXXXXXXXXXXXXX"
+                dir="ltr"
+                className="flex-1 bg-zinc-950/50 border border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/30 transition-all"
+              />
+              <button
+                onClick={() => { setFinnhubKey(finnhubKey); setFinnhubSaved(true); }}
+                className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-zinc-300 hover:bg-white/10 transition-all active:scale-95"
+              >
+                {finnhubSaved ? txt.common.saved : txt.common.save}
+              </button>
+            </div>
+            <p className="text-[9px] text-amber-300/70 leading-relaxed">{txt.settings.finnhubUsOnly}</p>
+          </>
+        )}
       </div>
 
       <div className="mt-8 glass-card rounded-2xl border border-zinc-500/20 p-5 space-y-3 bg-zinc-900/40">

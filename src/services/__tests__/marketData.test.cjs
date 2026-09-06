@@ -8,7 +8,8 @@
  * (רשימת קיצורים קשיחה) אבל חיפוש "SPY" לא מצא כלום. כל הבדיקות
  * כאן רצות **בלי רשת בכלל**.
  */
-const { searchCatalog, searchTickers } = require('../../../.test-build/marketData.cjs');
+const { searchCatalog, searchTickers, fetchPrices, getPriceProvider, setPriceProvider, getFinnhubKey, setFinnhubKey } =
+  require('../../../.test-build/marketData.cjs');
 let pass = 0, fail = 0;
 const check = (name, cond, extra = '') => {
   if (cond) { console.log('✓', name); pass++; }
@@ -57,6 +58,29 @@ check('קריפטו נמצא לפי שם', searchCatalog('bitcoin').some(r => r.
 
   const noMatch = await searchTickers('ZZZQQQNOPE');
   check('שאילתה שאינה קיימת מחזירה ריק ולא שגיאה', Array.isArray(noMatch) && noMatch.length === 0);
+
+  // --- מקור המחירים ---
+  // אין localStorage ב-node, ולכן כל הקריאות נופלות ל-try/catch ומחזירות
+  // ברירת מחדל. זה בדיוק מה שצריך לבדוק: שהן לא זורקות.
+  check('ברירת המחדל היא Yahoo', getPriceProvider() === 'yahoo');
+  check('שינוי ספק בלי localStorage לא זורק', (() => {
+    try { setPriceProvider('finnhub'); return true; } catch { return false; }
+  })());
+  check('מפתח חסר מוחזר כמחרוזת ריקה', getFinnhubKey() === '');
+  check('שמירת מפתח בלי localStorage לא זורקת', (() => {
+    try { setFinnhubKey('x'); return true; } catch { return false; }
+  })());
+
+  // בלי רשת שני הספקים נכשלים; המטמון ריק, ולכן התוצאה ריקה — אבל
+  // הפונקציה חייבת להחזיר אובייקט ולא לזרוק. זו הדרישה מ-§7.
+  const prices = await fetchPrices(['AAPL', 'TEVA.TA']);
+  check('fetchPrices בלי רשת מחזיר אובייקט ולא זורק',
+    prices && typeof prices === 'object' && !Array.isArray(prices));
+  check('fetchPrices לא ממציא מחירים', Object.values(prices).every(v => typeof v === 'number'));
+  check('fetchPrices על רשימה ריקה מחזיר ריק',
+    Object.keys(await fetchPrices([])).length === 0);
+  check('fetchPrices מסנן ערכים ריקים',
+    Object.keys(await fetchPrices(['', null, undefined])).length === 0);
 
   console.log(`\n${pass} עברו, ${fail} נכשלו`);
   process.exit(fail ? 1 : 0);
